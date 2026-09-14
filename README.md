@@ -12,6 +12,10 @@ ADMIN_PASSWORD=use_a_long_random_password
 ADMIN_SESSION_SECRET=use_a_different_long_random_secret
 ```
 
+When deploying from GitHub, `.env.local` is not committed to the repository. Add the same three variables to the deployment provider's environment settings, for the production environment, then redeploy. For Vercel, open Project Settings > Environment Variables, add `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and `ADMIN_SESSION_SECRET` under Production, and redeploy. The values must be entered as secrets; do not commit `.env.local` or real credentials to GitHub.
+
+If the login page reports that the admin variables are not set, the deployment has not received these environment variables. If the deployment returns 404 for `/admin/login`, it is pointing at a different project or deployment than this repository.
+
 The admin panel stores edited content in `data/content-overrides.json` and uploaded images in `public/uploads/`. The public project, service and design-library routes read those files at request time, so changes appear immediately on a self-hosted or persistent filesystem deployment. The filesystem on serverless deployments such as Vercel is ephemeral; use a persistent volume or commit the generated files to the project for changes to survive redeployments.
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
