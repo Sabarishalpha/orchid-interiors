@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { ReactNode } from "react";
 import Script from "next/script";
 import { Geist, Geist_Mono, Caveat } from "next/font/google";
 import SmoothMotion from "./components/SmoothMotion";
@@ -57,7 +58,7 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({ children }: { children: ReactNode }) {
   const structuredData = {
     "@context": "https://schema.org",
     "@type": "InteriorDesignBusiness",

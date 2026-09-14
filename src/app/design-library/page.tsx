@@ -3,7 +3,7 @@ import Navbar from "../components/Navbar";
 import DesignLibrary from "../components/DesignLibrary";
 import Footer from "../components/Footer";
 import PageHeader from "../components/PageHeader";
-import { getPublicDesignCategories } from "@/lib/db";
+import { DESIGN_LIBRARY } from "../data/designLibrary";
 
 export const metadata: Metadata = {
   title: "Design Library",
@@ -13,14 +13,6 @@ export const metadata: Metadata = {
 };
 
 export default function DesignLibraryPage() {
-  const categories = getPublicDesignCategories().map((category) => ({
-    number: String(category.display_order).padStart(2, "0"),
-    slug: category.slug,
-    title: category.name,
-    description: category.short_description,
-    images: [category.cover_image],
-  }));
-
   return (
     <>
       <Navbar />
@@ -28,7 +20,7 @@ export default function DesignLibraryPage() {
         image="/images/projects/1.png"
         imageAlt="Completed Orchid Interiors 3D design"
       />
-      <DesignLibrary categories={categories} />
+      <DesignLibrary categories={DESIGN_LIBRARY} />
       <Footer />
     </>
   );

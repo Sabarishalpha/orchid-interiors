@@ -4,7 +4,7 @@ import Projects from "../components/Projects";
 import Footer from "../components/Footer";
 import Link from "next/link";
 import PageHeader from "../components/PageHeader";
-import { getPublicProjects } from "@/lib/db";
+import { PROJECTS } from "../data/projects";
 
 const projectProcess = [
   {
@@ -37,20 +37,15 @@ export const metadata: Metadata = {
 };
 
 export default function ProjectsPage() {
-  const projects = getPublicProjects().map((project) => ({
-    id: project.id,
-    number: String(project.display_order).padStart(2, "0"),
-    title: project.name,
-    slug: project.slug,
-    category: project.category,
-    location: project.location,
-    image: project.cover_image,
-    width: 1920,
-    height: 1080,
-    gallery: project.gallery,
-    video: project.project_video || undefined,
+  const projects = PROJECTS.map((project) => ({
+    ...project,
+    category: project.category as
+      | "Residential"
+      | "Commercial"
+      | "Hospitality"
+      | "Institute"
+      | "Luxury",
   }));
-
   return (
     <>
       <Navbar />

@@ -9,7 +9,6 @@ import ImageGallery from "../../components/ImageGallery";
 import { notFound } from "next/navigation";
 
 import { SERVICES } from "../../data/services";
-import { getServiceBySlug } from "@/lib/db";
 
 type ServicePageProps = {
   params: Promise<{
@@ -28,18 +27,7 @@ export async function generateMetadata({
 }: ServicePageProps): Promise<Metadata> {
   const { slug } = await params;
 
-  const serviceFromDatabase = getServiceBySlug(slug);
-  const service = serviceFromDatabase
-    ? {
-        number: String(serviceFromDatabase.display_order).padStart(2, "0"),
-        slug: serviceFromDatabase.slug,
-        title: serviceFromDatabase.name,
-        description: serviceFromDatabase.short_description,
-        image: serviceFromDatabase.service_image,
-        gallery: serviceFromDatabase.gallery_images,
-        detail: serviceFromDatabase.full_description,
-      }
-    : SERVICES.find((item) => item.slug === slug);
+  const service = SERVICES.find((item) => item.slug === slug);
 
   return {
     title: service
@@ -56,18 +44,7 @@ export async function generateMetadata({
 export default async function ServiceDetailPage({ params }: ServicePageProps) {
   const { slug } = await params;
 
-  const serviceFromDatabase = getServiceBySlug(slug);
-  const service = serviceFromDatabase
-    ? {
-        number: String(serviceFromDatabase.display_order).padStart(2, "0"),
-        slug: serviceFromDatabase.slug,
-        title: serviceFromDatabase.name,
-        description: serviceFromDatabase.short_description,
-        image: serviceFromDatabase.service_image,
-        gallery: serviceFromDatabase.gallery_images,
-        detail: serviceFromDatabase.full_description,
-      }
-    : SERVICES.find((item) => item.slug === slug);
+  const service = SERVICES.find((item) => item.slug === slug);
 
   if (!service) {
     notFound();

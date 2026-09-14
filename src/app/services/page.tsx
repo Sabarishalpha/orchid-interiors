@@ -4,7 +4,7 @@ import Services from "../components/Services";
 import Footer from "../components/Footer";
 import Link from "next/link";
 import PageHeader from "../components/PageHeader";
-import { getPublicServices } from "@/lib/db";
+import { SERVICES } from "../data/services";
 
 const processSteps = [
   {
@@ -37,16 +37,6 @@ export const metadata: Metadata = {
 };
 
 export default function ServicesPage() {
-  const services = getPublicServices().map((service) => ({
-    number: String(service.display_order).padStart(2, "0"),
-    slug: service.slug,
-    title: service.name,
-    description: service.short_description,
-    image: service.service_image,
-    gallery: service.gallery_images,
-    detail: service.full_description,
-  }));
-
   return (
     <>
       <Navbar />
@@ -54,7 +44,7 @@ export default function ServicesPage() {
         image="/images/services.jpg"
         imageAlt="Refined residential interior designed by Orchid Interiors"
       />
-      <Services services={services} />
+      <Services services={SERVICES} />
 
       <section className="relative w-full bg-stone-50 px-4 py-14 sm:px-6 sm:py-16 md:px-10 md:py-20 lg:px-16">
         <div className="mx-auto max-w-7xl">

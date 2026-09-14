@@ -9,7 +9,6 @@ import ImageGallery from "../../components/ImageGallery";
 import { notFound } from "next/navigation";
 
 import { PROJECTS, resolveProjectAsset } from "../../data/projects";
-import { getProjectBySlug } from "@/lib/db";
 
 type ProjectPageProps = {
   params: Promise<{
@@ -36,18 +35,7 @@ export async function generateMetadata({
 }: ProjectPageProps): Promise<Metadata> {
   const { slug } = await params;
 
-  const projectFromDatabase = getProjectBySlug(slug);
-  const project = projectFromDatabase
-    ? {
-        title: projectFromDatabase.name,
-        slug: projectFromDatabase.slug,
-        category: projectFromDatabase.category,
-        location: projectFromDatabase.location,
-        image: projectFromDatabase.cover_image,
-        gallery: projectFromDatabase.gallery,
-        video: projectFromDatabase.project_video || undefined,
-      }
-    : PROJECTS.find((item) => item.slug === slug);
+  const project = PROJECTS.find((item) => item.slug === slug);
 
   return {
     title: project
@@ -74,18 +62,7 @@ export async function generateMetadata({
 export default async function ProjectDetailPage({ params }: ProjectPageProps) {
   const { slug } = await params;
 
-  const projectFromDatabase = getProjectBySlug(slug);
-  const project = projectFromDatabase
-    ? {
-        title: projectFromDatabase.name,
-        slug: projectFromDatabase.slug,
-        category: projectFromDatabase.category,
-        location: projectFromDatabase.location,
-        image: projectFromDatabase.cover_image,
-        gallery: projectFromDatabase.gallery,
-        video: projectFromDatabase.project_video || undefined,
-      }
-    : PROJECTS.find((item) => item.slug === slug);
+  const project = PROJECTS.find((item) => item.slug === slug);
 
   if (!project) {
     notFound();
