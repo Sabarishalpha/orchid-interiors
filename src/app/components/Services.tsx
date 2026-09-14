@@ -6,7 +6,21 @@ import { ArrowRight } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { SERVICES } from "../data/services";
 
-export default function Services() {
+type ServiceShape = {
+  number: string;
+  slug: string;
+  title: string;
+  description: string;
+  image: string;
+  gallery: readonly string[];
+  detail: string;
+};
+
+export default function Services({
+  services = SERVICES as readonly ServiceShape[],
+}: {
+  services?: readonly ServiceShape[];
+}) {
   const carouselRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -143,7 +157,7 @@ export default function Services() {
             className="flex snap-x snap-mandatory gap-6 overflow-x-auto scroll-smooth pb-4 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
             aria-label="Our services"
           >
-            {SERVICES.map((service) => (
+            {services.map((service) => (
               <Link
                 key={service.slug}
                 href={`/services/${service.slug}`}

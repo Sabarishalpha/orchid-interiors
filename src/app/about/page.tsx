@@ -4,6 +4,7 @@ import Navbar from "../components/Navbar";
 import About from "../components/About";
 import Footer from "../components/Footer";
 import PageHeader from "../components/PageHeader";
+import { getSiteStatistics } from "@/lib/db";
 
 const storyTimeline = [
   {
@@ -75,6 +76,8 @@ const goals = [
 ];
 
 export default function AboutPage() {
+  const statistics = getSiteStatistics();
+
   return (
     <>
       <Navbar />
@@ -84,7 +87,7 @@ export default function AboutPage() {
       />
 
       {/* ABOUT INTRO */}
-      <About />
+      <About statistics={statistics} />
 
       {/* OUR STORY */}
       <section className="relative w-full bg-stone-50 px-4 py-14 sm:px-6 sm:py-16 md:px-10 md:py-20 lg:px-16">

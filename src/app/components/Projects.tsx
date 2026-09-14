@@ -16,15 +16,33 @@ const CATEGORIES = [
 
 type CategoryType = (typeof CATEGORIES)[number];
 
-type ProjectsProps = {
-  projectLimit?: number;
+type ProjectShape = {
+  id: number;
+  number: string;
+  title: string;
+  slug: string;
+  category: string;
+  location: string;
+  image: string;
+  width: number;
+  height: number;
+  gallery: readonly string[];
+  video?: string;
 };
 
-export default function Projects({ projectLimit }: ProjectsProps) {
+type ProjectsProps = {
+  projectLimit?: number;
+  projects?: readonly ProjectShape[];
+};
+
+export default function Projects({
+  projectLimit,
+  projects = PROJECTS as readonly ProjectShape[],
+}: ProjectsProps) {
   const [activeCategory, setActiveCategory] =
     useState<CategoryType>("Residential");
 
-  const filteredProjects = PROJECTS.filter(
+  const filteredProjects = projects.filter(
     (project) => project.category === activeCategory,
   );
   const visibleProjects = projectLimit
@@ -146,7 +164,7 @@ export default function Projects({ projectLimit }: ProjectsProps) {
           "
         >
           {CATEGORIES.map((category) => {
-            const count = PROJECTS.filter(
+            const count = projects.filter(
               (project) => project.category === category,
             ).length;
 

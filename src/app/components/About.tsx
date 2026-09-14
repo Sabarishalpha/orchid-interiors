@@ -18,7 +18,25 @@ const ABOUT_CAROUSEL_IMAGES = [
   "/images/about-4.jpeg",
 ];
 
-export default function About() {
+type AboutStatistics = {
+  yearsExperience: number;
+  projectsCompleted: number;
+  clientFocused: number;
+  awardsWon: number;
+  trusted: number;
+};
+
+export default function About({
+  statistics = {
+    yearsExperience: 10,
+    projectsCompleted: 800,
+    clientFocused: 100,
+    awardsWon: 25,
+    trusted: 100,
+  },
+}: {
+  statistics?: AboutStatistics;
+}) {
   const { ref, inView } = useInView({
     triggerOnce: true,
     threshold: 0.3,
@@ -140,7 +158,7 @@ export default function About() {
               <div className="mb-3 text-4xl font-light text-black sm:text-5xl">
                 {inView ? (
                   <>
-                    <CountUp end={10} duration={2.5} />
+                    <CountUp end={statistics.yearsExperience} duration={2.5} />
                     <span className="text-3xl sm:text-4xl">+</span>
                   </>
                 ) : (
@@ -159,7 +177,10 @@ export default function About() {
               <div className="mb-3 text-4xl font-light text-black sm:text-5xl">
                 {inView ? (
                   <>
-                    <CountUp end={800} duration={2.5} />
+                    <CountUp
+                      end={statistics.projectsCompleted}
+                      duration={2.5}
+                    />
                     <span className="text-3xl sm:text-4xl">+</span>
                   </>
                 ) : (
@@ -178,7 +199,7 @@ export default function About() {
               <div className="mb-3 text-4xl font-light text-black sm:text-5xl">
                 {inView ? (
                   <>
-                    <CountUp end={100} duration={2.5} />
+                    <CountUp end={statistics.clientFocused} duration={2.5} />
                     <span className="text-3xl sm:text-4xl">%</span>
                   </>
                 ) : (
@@ -197,7 +218,7 @@ export default function About() {
               <div className="mb-3 text-4xl font-light text-black sm:text-5xl">
                 {inView ? (
                   <>
-                    <CountUp end={25} duration={2.5} />
+                    <CountUp end={statistics.awardsWon} duration={2.5} />
                     <span className="text-3xl sm:text-4xl">+</span>
                   </>
                 ) : (
@@ -216,7 +237,7 @@ export default function About() {
               <div className="mb-3 text-4xl font-light text-black sm:text-5xl">
                 {inView ? (
                   <>
-                    <CountUp end={100} duration={2.5} />
+                    <CountUp end={statistics.trusted} duration={2.5} />
                     <span className="text-3xl sm:text-4xl">%</span>
                   </>
                 ) : (

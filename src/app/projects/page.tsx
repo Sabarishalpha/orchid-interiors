@@ -4,6 +4,7 @@ import Projects from "../components/Projects";
 import Footer from "../components/Footer";
 import Link from "next/link";
 import PageHeader from "../components/PageHeader";
+import { getPublicProjects } from "@/lib/db";
 
 const projectProcess = [
   {
@@ -36,6 +37,20 @@ export const metadata: Metadata = {
 };
 
 export default function ProjectsPage() {
+  const projects = getPublicProjects().map((project) => ({
+    id: project.id,
+    number: String(project.display_order).padStart(2, "0"),
+    title: project.name,
+    slug: project.slug,
+    category: project.category,
+    location: project.location,
+    image: project.cover_image,
+    width: 1920,
+    height: 1080,
+    gallery: project.gallery,
+    video: project.project_video || undefined,
+  }));
+
   return (
     <>
       <Navbar />
@@ -43,7 +58,7 @@ export default function ProjectsPage() {
         image="/images/projects/1.png"
         imageAlt="Interior design project by Orchid Interiors"
       />
-      <Projects />
+      <Projects projects={projects} />
 
       <section className="relative w-full bg-stone-50 px-4 py-14 sm:px-6 sm:py-16 md:px-10 md:py-20 lg:px-16">
         <div className="mx-auto max-w-7xl">

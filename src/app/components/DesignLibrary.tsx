@@ -1,6 +1,13 @@
 import Image from "next/image";
 import Link from "next/link";
-import type { DesignCategory } from "../data/designLibrary";
+
+type DesignCategory = {
+  number: string;
+  slug: string;
+  title: string;
+  description: string;
+  images: readonly string[];
+};
 
 type DesignLibraryProps = {
   categories: readonly DesignCategory[];

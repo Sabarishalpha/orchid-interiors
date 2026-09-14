@@ -6,6 +6,7 @@ import Footer from "../../components/Footer";
 import ImageGallery from "../../components/ImageGallery";
 import PageHeader from "../../components/PageHeader";
 import { DESIGN_LIBRARY, getDesignCategory } from "../../data/designLibrary";
+import { getDesignLibraryByCategorySlug } from "@/lib/db";
 
 type CategoryPageProps = {
   params: Promise<{ category: string }>;
@@ -19,7 +20,19 @@ export async function generateMetadata({
   params,
 }: CategoryPageProps): Promise<Metadata> {
   const { category: slug } = await params;
-  const category = getDesignCategory(slug);
+  const categoryFromDb = getDesignLibraryByCategorySlug(slug);
+  const category = categoryFromDb
+    ? {
+        number: String(categoryFromDb.category.display_order).padStart(2, "0"),
+        slug: categoryFromDb.category.slug,
+        title: categoryFromDb.category.name,
+        description: categoryFromDb.category.short_description,
+        images: [
+          categoryFromDb.category.cover_image,
+          ...categoryFromDb.items.map((item) => item.main_image),
+        ],
+      }
+    : getDesignCategory(slug);
 
   if (!category) return {};
 
@@ -35,7 +48,19 @@ export default async function DesignCategoryPage({
   params,
 }: CategoryPageProps) {
   const { category: slug } = await params;
-  const category = getDesignCategory(slug);
+  const categoryFromDb = getDesignLibraryByCategorySlug(slug);
+  const category = categoryFromDb
+    ? {
+        number: String(categoryFromDb.category.display_order).padStart(2, "0"),
+        slug: categoryFromDb.category.slug,
+        title: categoryFromDb.category.name,
+        description: categoryFromDb.category.short_description,
+        images: [
+          categoryFromDb.category.cover_image,
+          ...categoryFromDb.items.map((item) => item.main_image),
+        ],
+      }
+    : getDesignCategory(slug);
 
   if (!category) notFound();
 
