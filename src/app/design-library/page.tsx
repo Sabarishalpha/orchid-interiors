@@ -3,7 +3,9 @@ import Navbar from "../components/Navbar";
 import DesignLibrary from "../components/DesignLibrary";
 import Footer from "../components/Footer";
 import PageHeader from "../components/PageHeader";
-import { DESIGN_LIBRARY } from "../data/designLibrary";
+import { getDesignLibrary } from "@/lib/content";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Design Library",
@@ -20,7 +22,7 @@ export default function DesignLibraryPage() {
         image="/images/projects/1.png"
         imageAlt="Completed Orchid Interiors 3D design"
       />
-      <DesignLibrary categories={DESIGN_LIBRARY} />
+      <DesignLibrary categories={getDesignLibrary()} />
       <Footer />
     </>
   );

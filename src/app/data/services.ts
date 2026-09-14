@@ -1,4 +1,14 @@
-export const SERVICES = [
+export type Service = {
+  number: string;
+  slug: string;
+  title: string;
+  description: string;
+  image: string;
+  gallery: string[];
+  detail: string;
+};
+
+export const SERVICES: Service[] = [
   {
     number: "01",
     slug: "modular-kitchen",
@@ -188,4 +198,4 @@ export const SERVICES = [
     detail:
       "From arrival to final detail, we create hospitality spaces that feel distinctive, welcoming and aligned with the experience you want guests to remember.",
   },
-] as const;
+];

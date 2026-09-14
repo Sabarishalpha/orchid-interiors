@@ -4,7 +4,9 @@ import Projects from "../components/Projects";
 import Footer from "../components/Footer";
 import Link from "next/link";
 import PageHeader from "../components/PageHeader";
-import { PROJECTS } from "../data/projects";
+import { getProjects } from "@/lib/content";
+
+export const dynamic = "force-dynamic";
 
 const projectProcess = [
   {
@@ -37,7 +39,7 @@ export const metadata: Metadata = {
 };
 
 export default function ProjectsPage() {
-  const projects = PROJECTS.map((project) => ({
+  const projects = getProjects().map((project) => ({
     ...project,
     category: project.category as
       | "Residential"

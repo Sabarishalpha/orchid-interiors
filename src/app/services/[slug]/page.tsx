@@ -8,7 +8,9 @@ import Footer from "../../components/Footer";
 import ImageGallery from "../../components/ImageGallery";
 import { notFound } from "next/navigation";
 
-import { SERVICES } from "../../data/services";
+import { getServices } from "@/lib/content";
+
+export const dynamic = "force-dynamic";
 
 type ServicePageProps = {
   params: Promise<{
@@ -16,18 +18,12 @@ type ServicePageProps = {
   }>;
 };
 
-export function generateStaticParams() {
-  return SERVICES.map((service) => ({
-    slug: service.slug,
-  }));
-}
-
 export async function generateMetadata({
   params,
 }: ServicePageProps): Promise<Metadata> {
   const { slug } = await params;
 
-  const service = SERVICES.find((item) => item.slug === slug);
+  const service = getServices().find((item) => item.slug === slug);
 
   return {
     title: service
@@ -44,7 +40,7 @@ export async function generateMetadata({
 export default async function ServiceDetailPage({ params }: ServicePageProps) {
   const { slug } = await params;
 
-  const service = SERVICES.find((item) => item.slug === slug);
+  const service = getServices().find((item) => item.slug === slug);
 
   if (!service) {
     notFound();

@@ -4,7 +4,9 @@ import Services from "../components/Services";
 import Footer from "../components/Footer";
 import Link from "next/link";
 import PageHeader from "../components/PageHeader";
-import { SERVICES } from "../data/services";
+import { getServices } from "@/lib/content";
+
+export const dynamic = "force-dynamic";
 
 const processSteps = [
   {
@@ -44,7 +46,7 @@ export default function ServicesPage() {
         image="/images/services.jpg"
         imageAlt="Refined residential interior designed by Orchid Interiors"
       />
-      <Services services={SERVICES} />
+      <Services services={getServices()} />
 
       <section className="relative w-full bg-stone-50 px-4 py-14 sm:px-6 sm:py-16 md:px-10 md:py-20 lg:px-16">
         <div className="mx-auto max-w-7xl">

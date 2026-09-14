@@ -1,4 +1,12 @@
-export const DESIGN_LIBRARY = [
+export type DesignCategory = {
+  number: string;
+  slug: string;
+  title: string;
+  description: string;
+  images: string[];
+};
+
+export const DESIGN_LIBRARY: DesignCategory[] = [
   {
     number: "01",
     slug: "living-room",
@@ -139,9 +147,7 @@ export const DESIGN_LIBRARY = [
       "/images/projects/Ravichandram interior (12).jpg",
     ],
   },
-] as const;
-
-export type DesignCategory = (typeof DESIGN_LIBRARY)[number];
+];
 
 export function getDesignCategory(slug: string) {
   return DESIGN_LIBRARY.find((category) => category.slug === slug);

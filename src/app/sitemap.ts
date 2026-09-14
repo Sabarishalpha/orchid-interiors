@@ -1,12 +1,15 @@
 import type { MetadataRoute } from "next";
-import { PROJECTS } from "./data/projects";
-import { SERVICES } from "./data/services";
-import { DESIGN_LIBRARY } from "./data/designLibrary";
+import { getDesignLibrary, getProjects, getServices } from "@/lib/content";
+
+export const dynamic = "force-dynamic";
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://orchidinteriors.com";
 const lastModified = new Date("2026-09-10T00:00:00.000Z");
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  const projects = getProjects();
+  const services = getServices();
+  const designLibrary = getDesignLibrary();
   const pages = [
     "",
     "/about",
@@ -24,19 +27,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly" as const,
       priority: path === "" || path === "/orchid-interiors" ? 1 : 0.8,
     })),
-    ...PROJECTS.map((project) => ({
+    ...projects.map((project) => ({
       url: `${siteUrl}/projects/${project.slug}`,
       lastModified,
       changeFrequency: "monthly" as const,
       priority: 0.7,
     })),
-    ...SERVICES.map((service) => ({
+    ...services.map((service) => ({
       url: `${siteUrl}/services/${service.slug}`,
       lastModified,
       changeFrequency: "monthly" as const,
       priority: 0.7,
     })),
-    ...DESIGN_LIBRARY.map((category) => ({
+    ...designLibrary.map((category) => ({
       url: `${siteUrl}/design-library/${category.slug}`,
       lastModified,
       changeFrequency: "monthly" as const,

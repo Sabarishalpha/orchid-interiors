@@ -7,11 +7,12 @@ import Footer from "./components/Footer";
 import FeaturedProjects from "./components/FeaturedProjects";
 import VideoShowcase from "./components/VideoShowcase";
 import BrandPartners from "./components/BrandPartners";
-import { PROJECTS } from "./data/projects";
-import { SERVICES } from "./data/services";
+import { getProjects, getServices } from "@/lib/content";
+
+export const dynamic = "force-dynamic";
 
 export default function Home() {
-  const projects = PROJECTS.map((project) => ({
+  const projects = getProjects().map((project) => ({
     ...project,
     category: project.category as
       | "Residential"
@@ -27,7 +28,7 @@ export default function Home() {
       <main>
         <Hero />
         <About />
-        <Services services={SERVICES} />
+        <Services services={getServices()} />
         <FeaturedProjects />
         <BrandPartners />
         <VideoShowcase />

@@ -8,7 +8,10 @@ import Footer from "../../components/Footer";
 import ImageGallery from "../../components/ImageGallery";
 import { notFound } from "next/navigation";
 
-import { PROJECTS, resolveProjectAsset } from "../../data/projects";
+import { getProjects } from "@/lib/content";
+import { resolveProjectAsset } from "../../data/projects";
+
+export const dynamic = "force-dynamic";
 
 type ProjectPageProps = {
   params: Promise<{
@@ -20,12 +23,6 @@ type ProjectPageProps = {
    STATIC PROJECT PAGES
 ========================================================== */
 
-export function generateStaticParams() {
-  return PROJECTS.map((project) => ({
-    slug: project.slug,
-  }));
-}
-
 /* ==========================================================
    SEO METADATA
 ========================================================== */
@@ -35,7 +32,7 @@ export async function generateMetadata({
 }: ProjectPageProps): Promise<Metadata> {
   const { slug } = await params;
 
-  const project = PROJECTS.find((item) => item.slug === slug);
+  const project = getProjects().find((item) => item.slug === slug);
 
   return {
     title: project
@@ -62,7 +59,7 @@ export async function generateMetadata({
 export default async function ProjectDetailPage({ params }: ProjectPageProps) {
   const { slug } = await params;
 
-  const project = PROJECTS.find((item) => item.slug === slug);
+  const project = getProjects().find((item) => item.slug === slug);
 
   if (!project) {
     notFound();
@@ -170,9 +167,8 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
                   text-stone-700
                 "
               >
-                A considered {project.category.toLowerCase()} interior shaped
-                around atmosphere, materiality and the everyday experience of
-                the space.
+                {project.description ??
+                  `A considered ${project.category.toLowerCase()} interior shaped around atmosphere, materiality and the everyday experience of the space.`}
               </p>
 
               {/* CTA */}

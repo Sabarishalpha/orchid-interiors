@@ -5,21 +5,19 @@ import Navbar from "../../components/Navbar";
 import Footer from "../../components/Footer";
 import ImageGallery from "../../components/ImageGallery";
 import PageHeader from "../../components/PageHeader";
-import { DESIGN_LIBRARY, getDesignCategory } from "../../data/designLibrary";
+import { getDesignLibrary } from "@/lib/content";
+
+export const dynamic = "force-dynamic";
 
 type CategoryPageProps = {
   params: Promise<{ category: string }>;
 };
 
-export function generateStaticParams() {
-  return DESIGN_LIBRARY.map(({ slug }) => ({ category: slug }));
-}
-
 export async function generateMetadata({
   params,
 }: CategoryPageProps): Promise<Metadata> {
   const { category: slug } = await params;
-  const category = getDesignCategory(slug);
+  const category = getDesignLibrary().find((item) => item.slug === slug);
 
   if (!category) return {};
 
@@ -35,7 +33,7 @@ export default async function DesignCategoryPage({
   params,
 }: CategoryPageProps) {
   const { category: slug } = await params;
-  const category = getDesignCategory(slug);
+  const category = getDesignLibrary().find((item) => item.slug === slug);
 
   if (!category) notFound();
 

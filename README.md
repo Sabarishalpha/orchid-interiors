@@ -1,6 +1,18 @@
 ## Environment variables
 
 Copy `.env.example` to `.env.local` and set `GEMINI_API_KEY` with a key from Google AI Studio. Set `LEAD_WEBHOOK_URL` as well if you want enquiry forms to deliver leads to your mail or CRM webhook. Restart the development server after changing environment variables.
+
+## Admin panel
+
+Set these values in `.env.local` before using `/admin/login`:
+
+```env
+ADMIN_USERNAME=your_admin_username
+ADMIN_PASSWORD=use_a_long_random_password
+ADMIN_SESSION_SECRET=use_a_different_long_random_secret
+```
+
+The admin panel stores edited content in `data/content-overrides.json` and uploaded images in `public/uploads/`. The public project, service and design-library routes read those files at request time, so changes appear immediately on a self-hosted or persistent filesystem deployment. The filesystem on serverless deployments such as Vercel is ephemeral; use a persistent volume or commit the generated files to the project for changes to survive redeployments.
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
@@ -38,4 +50,4 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 "# orchid-interiors"
-"# orchid-sabarish" 
+"# orchid-sabarish"

@@ -12,6 +12,7 @@ export type Project = {
   slug: string;
   category: ProjectCategory;
   location: string;
+  description?: string;
 
   image: string;
   width: number;
