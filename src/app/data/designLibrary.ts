@@ -4,6 +4,8 @@ export type DesignCategory = {
   title: string;
   description: string;
   images: string[];
+  published?: boolean;
+  video?: string;
 };
 
 export const DESIGN_LIBRARY: DesignCategory[] = [

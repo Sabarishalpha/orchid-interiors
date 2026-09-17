@@ -1,6 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
 import { BUSINESS_INFO } from "../../data/business";
+import { clientAddress, isRateLimited, jsonLimit } from "../../../lib/security";
 
 const SYSTEM_INSTRUCTION = `
 You are Orchid AI, the virtual interior design assistant for ${BUSINESS_INFO.companyName}.
@@ -46,6 +47,10 @@ Important rules:
 
 export async function POST(request: NextRequest) {
   try {
+    if (jsonLimit(request, 64 * 1024) || isRateLimited(`chat:${clientAddress(request)}`, 20, 10 * 60 * 1000)) {
+      return NextResponse.json({ error: "Chat request limit exceeded. Please try again later." }, { status: 429 });
+    }
+
     // Check API key
     const apiKey = process.env.GEMINI_API_KEY;
 
@@ -69,7 +74,7 @@ export async function POST(request: NextRequest) {
       ? body.history
       : [];
 
-    if (!message || typeof message !== "string") {
+    if (!message || typeof message !== "string" || message.length > 4000) {
       return NextResponse.json(
         {
           error: "Message is required.",
@@ -89,12 +94,14 @@ export async function POST(request: NextRequest) {
      */
     const contents = [
       ...history
+        .slice(-20)
         .filter(
           (item: {
             role?: string;
             content?: string;
           }) =>
             typeof item?.content === "string" &&
+            item.content.length <= 2000 &&
             (item.role === "user" ||
               item.role === "assistant")
         )
@@ -125,8 +132,6 @@ export async function POST(request: NextRequest) {
       },
     ];
 
-    console.log("🤖 Sending request to Gemini...");
-
     const response = await ai.models.generateContent({
       model: "gemini-3.6-flash",
       contents,
@@ -138,8 +143,6 @@ export async function POST(request: NextRequest) {
     });
 
     const reply = response.text?.trim();
-
-    console.log("✅ Gemini response received");
 
     if (!reply) {
       return NextResponse.json(
@@ -156,16 +159,11 @@ export async function POST(request: NextRequest) {
       reply,
     });
   } catch (error: unknown) {
-    console.error("❌ GEMINI ERROR:", error);
-
-    const errorMessage =
-      error instanceof Error
-        ? error.message
-        : "Unknown Gemini API error";
+    console.error("Gemini request failed", error instanceof Error ? error.message : "Unknown error");
 
     return NextResponse.json(
       {
-        error: errorMessage,
+        error: "The chat service is temporarily unavailable.",
       },
       {
         status: 500,

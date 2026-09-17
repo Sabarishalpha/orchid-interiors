@@ -190,6 +190,24 @@ export default async function ServiceDetailPage({ params }: ServicePageProps) {
           </div>
         </section>
 
+        {service.video ? (
+          <section className="bg-stone-50 px-4 pb-12 sm:px-6 md:px-10 lg:px-16 lg:pb-16">
+            <div className="mx-auto max-w-7xl overflow-hidden bg-black">
+              <video
+                className="aspect-video w-full object-cover"
+                controls
+                controlsList="nodownload"
+                muted
+                playsInline
+                preload="metadata"
+              >
+                <source src={service.video} />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          </section>
+        ) : null}
+
         {/* ==================================================
             APPROACH
         ================================================== */}

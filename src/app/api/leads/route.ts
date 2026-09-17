@@ -1,21 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
+import { clientAddress, isRateLimited, jsonLimit } from "../../../lib/security";
 
 const leadSchema = z.object({
-  name: z.string().trim().min(2),
-  phone: z.string().trim().min(7),
-  email: z.string().trim().email().optional(),
-  location: z.string().trim().min(2),
-  propertyType: z.string().trim().min(1),
-  interiorRequirement: z.string().trim().min(1),
-  propertySize: z.string().trim().min(1),
-  budget: z.string().trim().min(1),
-  timeline: z.string().trim().min(1),
-  message: z.string().trim().min(1),
+  name: z.string().trim().min(2).max(120),
+  phone: z.string().trim().min(7).max(40),
+  email: z.string().trim().email().max(254).optional(),
+  location: z.string().trim().min(2).max(160),
+  propertyType: z.string().trim().min(1).max(80),
+  interiorRequirement: z.string().trim().min(1).max(500),
+  propertySize: z.string().trim().min(1).max(80),
+  budget: z.string().trim().min(1).max(80),
+  timeline: z.string().trim().min(1).max(80),
+  message: z.string().trim().min(1).max(4000),
 });
 
 export async function POST(request: NextRequest) {
   try {
+    if (jsonLimit(request, 32 * 1024) || isRateLimited(`lead:${clientAddress(request)}`, 8, 10 * 60 * 1000)) {
+      return NextResponse.json({ error: "Too many enquiries. Please try again later." }, { status: 429 });
+    }
+
     const lead = leadSchema.parse(await request.json());
     const webhookUrl = process.env.LEAD_WEBHOOK_URL;
 
@@ -33,6 +38,7 @@ export async function POST(request: NextRequest) {
         receivedAt: new Date().toISOString(),
         ...lead,
       }),
+      signal: AbortSignal.timeout(10_000),
     });
 
     if (!delivery.ok) {

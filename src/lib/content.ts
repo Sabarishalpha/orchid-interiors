@@ -46,38 +46,41 @@ function mergeBySlug<T extends { slug: string }>(
   ];
 }
 
-export function getProjects() {
+export function getProjects(includeUnpublished = false) {
   const overrides = readOverrides();
-  return mergeBySlug(PROJECTS, overrides.projects, overrides.deleted?.projects);
+  const items = mergeBySlug(PROJECTS, overrides.projects, overrides.deleted?.projects);
+  return includeUnpublished ? items : items.filter((item) => item.published !== false);
 }
 
-export function getServices() {
+export function getServices(includeUnpublished = false) {
   const overrides = readOverrides();
-  return mergeBySlug(SERVICES, overrides.services, overrides.deleted?.services);
+  const items = mergeBySlug(SERVICES, overrides.services, overrides.deleted?.services);
+  return includeUnpublished ? items : items.filter((item) => item.published !== false);
 }
 
-export function getDesignLibrary() {
+export function getDesignLibrary(includeUnpublished = false) {
   const overrides = readOverrides();
-  return mergeBySlug(
+  const items = mergeBySlug(
     DESIGN_LIBRARY,
     overrides.designLibrary,
     overrides.deleted?.designLibrary,
   );
+  return includeUnpublished ? items : items.filter((item) => item.published !== false);
 }
 
-export function getContent(kind: ContentKind) {
-  if (kind === "projects") return getProjects();
-  if (kind === "services") return getServices();
-  return getDesignLibrary();
+export function getContent(kind: ContentKind, includeUnpublished = false) {
+  if (kind === "projects") return getProjects(includeUnpublished);
+  if (kind === "services") return getServices(includeUnpublished);
+  return getDesignLibrary(includeUnpublished);
 }
 
 export function saveContent(content: ContentOverrides) {
   const existing = readOverrides();
   const deleted = { ...existing.deleted, ...content.deleted };
   const collections = {
-    projects: content.projects ?? getProjects(),
-    services: content.services ?? getServices(),
-    designLibrary: content.designLibrary ?? getDesignLibrary(),
+    projects: content.projects ?? getProjects(true),
+    services: content.services ?? getServices(true),
+    designLibrary: content.designLibrary ?? getDesignLibrary(true),
   };
 
   for (const kind of ["projects", "services", "designLibrary"] as const) {

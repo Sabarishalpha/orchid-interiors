@@ -6,6 +6,8 @@ export type Service = {
   image: string;
   gallery: string[];
   detail: string;
+  published?: boolean;
+  video?: string;
 };
 
 export const SERVICES: Service[] = [

@@ -385,7 +385,7 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
                     playsInline
                     preload="metadata"
                   >
-                    <source src={project.video} type="video/mp4" />
+                    <source src={project.video} />
                     Your browser does not support the video tag.
                   </video>
                 </div>

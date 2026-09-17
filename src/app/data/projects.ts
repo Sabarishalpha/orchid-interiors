@@ -19,6 +19,7 @@ export type Project = {
   height: number;
 
   gallery: string[];
+  published?: boolean;
 
   /**
    * Optional project video.

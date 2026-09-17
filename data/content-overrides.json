@@ -661,20 +661,6 @@
       ]
     },
     {
-      "number": "09",
-      "slug": "home-office",
-      "title": "Home Office",
-      "description": "Focused workspaces designed for clarity, comfort and flow.",
-      "images": [
-        "/images/projects/Sathyamoorthy (7).png",
-        "/images/projects/Sathyamoorthy (8).png",
-        "/images/projects/Sathyamoorthy (9).png",
-        "/images/projects/Sathyamoorthy (10).png",
-        "/images/projects/Sathyamoorthy (11).png",
-        "/images/projects/Sathyamoorthy (12).png"
-      ]
-    },
-    {
       "number": "10",
       "slug": "wardrobe-storage",
       "title": "Wardrobe & Storage",
@@ -692,6 +678,8 @@
   "deleted": {
     "projects": [],
     "services": [],
-    "designLibrary": []
+    "designLibrary": [
+      "home-office"
+    ]
   }
 }

@@ -63,6 +63,22 @@ export default async function DesignCategoryPage({
             </Link>
           </div>
 
+          {category.video ? (
+            <div className="mb-10 overflow-hidden bg-black sm:mb-14">
+              <video
+                className="aspect-video w-full object-cover"
+                controls
+                controlsList="nodownload"
+                muted
+                playsInline
+                preload="metadata"
+              >
+                <source src={category.video} />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+          ) : null}
+
           <ImageGallery
             images={category.images}
             title={category.title}

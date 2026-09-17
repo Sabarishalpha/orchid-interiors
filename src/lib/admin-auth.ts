@@ -4,10 +4,10 @@ import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 
 const COOKIE_NAME = "orchid_admin_session";
-const SESSION_TTL_SECONDS = 60 * 60 * 8;
+const SESSION_TTL_SECONDS = 60 * 60 * 24;
 
 function getSecret() {
-  return process.env.ADMIN_SESSION_SECRET ?? process.env.ADMIN_PASSWORD ?? "";
+  return process.env.ADMIN_SESSION_SECRET ?? "";
 }
 
 function sign(value: string) {
@@ -22,11 +22,14 @@ function safeEqual(left: string, right: string) {
 
 export function isAdminConfigured() {
   return Boolean(
-    process.env.ADMIN_USERNAME && process.env.ADMIN_PASSWORD && getSecret(),
+    process.env.ADMIN_USERNAME &&
+      process.env.ADMIN_PASSWORD &&
+      getSecret().length >= 32,
   );
 }
 
 export function isValidCredentials(username: string, password: string) {
+  if (username.length > 128 || password.length > 256) return false;
   return (
     isAdminConfigured() &&
     safeEqual(username, process.env.ADMIN_USERNAME ?? "") &&
