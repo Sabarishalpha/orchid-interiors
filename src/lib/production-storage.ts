@@ -13,7 +13,7 @@ export function getProductionRedis() {
   }
 
   if (process.env.VERCEL) {
-    throw new Error("Configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN for persistent production data.");
+    console.error("Persistent content and analytics storage is unavailable: configure UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.");
   }
 
   redis = null;

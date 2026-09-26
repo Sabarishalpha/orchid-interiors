@@ -32,12 +32,17 @@ async function readOverrides(): Promise<ContentOverrides> {
   const redis = getProductionRedis();
   if (!redis) return readLocalOverrides();
 
-  const stored = await redis.get<ContentOverrides>(contentKey);
-  if (stored) return stored;
+  try {
+    const stored = await redis.get<ContentOverrides>(contentKey);
+    if (stored) return stored;
 
-  const initial = readLocalOverrides();
-  await redis.set(contentKey, initial, { nx: true });
-  return (await redis.get<ContentOverrides>(contentKey)) ?? initial;
+    const initial = readLocalOverrides();
+    await redis.set(contentKey, initial, { nx: true });
+    return (await redis.get<ContentOverrides>(contentKey)) ?? initial;
+  } catch (error) {
+    console.error("Unable to read persistent content; serving the bundled content instead.", error);
+    return readLocalOverrides();
+  }
 }
 
 function mergeBySlug<T extends { slug: string }>(
@@ -106,11 +111,21 @@ export async function saveContent(content: ContentOverrides) {
   const next = { ...collections, deleted };
   const redis = getProductionRedis();
   if (redis) {
-    await redis.set(contentKey, next);
-  } else {
-    fs.mkdirSync(path.dirname(contentPath), { recursive: true });
-    fs.writeFileSync(contentPath, `${JSON.stringify(next, null, 2)}\n`, "utf8");
+    try {
+      await redis.set(contentKey, next);
+      return;
+    } catch (error) {
+      console.error("Unable to save persistent content.", error);
+      throw new Error("Persistent storage is unavailable. Check the Upstash Redis environment variables in Vercel.");
+    }
   }
+
+  if (process.env.VERCEL) {
+    throw new Error("Persistent storage is not configured. Add the Upstash Redis environment variables in Vercel.");
+  }
+
+  fs.mkdirSync(path.dirname(contentPath), { recursive: true });
+  fs.writeFileSync(contentPath, `${JSON.stringify(next, null, 2)}\n`, "utf8");
 }
 
 export async function deleteContent(kind: ContentKind, slug: string) {

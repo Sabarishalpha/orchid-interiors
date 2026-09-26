@@ -45,18 +45,23 @@ async function readEvents(): Promise<ActivityEvent[]> {
   const redis = getProductionRedis();
   if (!redis) return readLocalEvents();
 
-  let events = await redis.lrange<ActivityEvent>(activityKey, 0, 99999);
-  if (events.length) return events;
+  try {
+    let events = await redis.lrange<ActivityEvent>(activityKey, 0, 99999);
+    if (events.length) return events;
 
-  const seeded = await redis.set(activitySeedKey, "1", { nx: true });
-  if (seeded) {
-    const localEvents = readLocalEvents().slice(-100000);
-    if (localEvents.length) {
-      await redis.rpush(activityKey, ...localEvents);
+    const seeded = await redis.set(activitySeedKey, "1", { nx: true });
+    if (seeded) {
+      const localEvents = readLocalEvents().slice(-100000);
+      if (localEvents.length) {
+        await redis.rpush(activityKey, ...localEvents);
+      }
     }
+    events = await redis.lrange<ActivityEvent>(activityKey, 0, 99999);
+    return events;
+  } catch (error) {
+    console.error("Unable to read persistent analytics; serving local analytics instead.", error);
+    return readLocalEvents();
   }
-  events = await redis.lrange<ActivityEvent>(activityKey, 0, 99999);
-  return events;
 }
 
 function writeEvents(events: ActivityEvent[]) {
@@ -70,11 +75,17 @@ export async function recordActivity(event: Omit<ActivityEvent, "createdAt">) {
   const redis = getProductionRedis();
   const nextEvent = { ...event, createdAt: new Date().toISOString() };
   if (redis) {
-    if (!(await redis.exists(activitySeedKey))) await readEvents();
-    await redis.rpush(activityKey, nextEvent);
-    await redis.ltrim(activityKey, -100000, -1);
+    try {
+      if (!(await redis.exists(activitySeedKey))) await readEvents();
+      await redis.rpush(activityKey, nextEvent);
+      await redis.ltrim(activityKey, -100000, -1);
+    } catch (error) {
+      console.error("Unable to record analytics event.", error);
+    }
     return;
   }
+
+  if (process.env.VERCEL) return;
 
   const events = readLocalEvents();
   events.push(nextEvent);
