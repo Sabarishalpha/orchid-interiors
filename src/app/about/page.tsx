@@ -7,7 +7,7 @@ import PageHeader from "../components/PageHeader";
 
 const storyTimeline = [
   {
-    year: "2014",
+    year: "2010",
     title: "Studio founded",
     text: "Orchid Interiors began with a simple philosophy: design spaces that feel personal, warm and enduring.",
   },
