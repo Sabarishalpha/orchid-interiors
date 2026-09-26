@@ -38,7 +38,8 @@ export const metadata: Metadata = {
   twitter: { images: ["/images/services.jpg"] },
 };
 
-export default function ServicesPage() {
+export default async function ServicesPage() {
+  const services = await getServices();
   return (
     <>
       <Navbar />
@@ -46,7 +47,7 @@ export default function ServicesPage() {
         image="/images/services.jpg"
         imageAlt="Refined residential interior designed by Orchid Interiors"
       />
-      <Services services={getServices()} />
+      <Services services={services} />
 
       <section className="relative w-full bg-stone-50 px-4 py-14 sm:px-6 sm:py-16 md:px-10 md:py-20 lg:px-16">
         <div className="mx-auto max-w-7xl">

@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid activity payload." }, { status: 400 });
     }
 
-    recordActivity({
+    await recordActivity({
       type: body.type as ActivityType,
       path: path.slice(0, 500),
       ...(body.category && categories.has(body.category as ActivityCategory)

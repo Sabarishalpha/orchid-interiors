@@ -32,7 +32,7 @@ export async function generateMetadata({
 }: ProjectPageProps): Promise<Metadata> {
   const { slug } = await params;
 
-  const project = getProjects().find((item) => item.slug === slug);
+  const project = (await getProjects()).find((item) => item.slug === slug);
 
   return {
     title: project
@@ -59,7 +59,7 @@ export async function generateMetadata({
 export default async function ProjectDetailPage({ params }: ProjectPageProps) {
   const { slug } = await params;
 
-  const project = getProjects().find((item) => item.slug === slug);
+  const project = (await getProjects()).find((item) => item.slug === slug);
 
   if (!project) {
     notFound();

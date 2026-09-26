@@ -11,8 +11,12 @@ import { getProjects, getServices } from "@/lib/content";
 
 export const dynamic = "force-dynamic";
 
-export default function Home() {
-  const projects = getProjects().map((project) => ({
+export default async function Home() {
+  const [projectItems, services] = await Promise.all([
+    getProjects(),
+    getServices(),
+  ]);
+  const projects = projectItems.map((project) => ({
     ...project,
     category: project.category as
       | "Residential"
@@ -28,7 +32,7 @@ export default function Home() {
       <main>
         <Hero />
         <About />
-        <Services services={getServices()} />
+        <Services services={services} />
         <FeaturedProjects />
         <BrandPartners />
         <VideoShowcase />

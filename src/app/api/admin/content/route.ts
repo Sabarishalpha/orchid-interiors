@@ -75,6 +75,28 @@ function existingGallery(form: FormData) {
   }
 }
 
+function isPublicBlobUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && url.hostname.endsWith(".public.blob.vercel-storage.com");
+  } catch {
+    return false;
+  }
+}
+
+function uploadedGallery(form: FormData): string[] | null {
+  const rawValue = text(form, "galleryImageUrls");
+  if (!rawValue) return [];
+  try {
+    const value = JSON.parse(rawValue);
+    return Array.isArray(value) && value.every((item) => typeof item === "string" && isPublicBlobUrl(item))
+      ? value as string[]
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 async function saveUpload(
   file: File,
   kind: ContentKind,
@@ -124,8 +146,16 @@ async function saveVideo(file: File, kind: ContentKind, slug: string) {
 async function imageValues(form: FormData, kind: ContentKind, slug: string) {
   const mainFile = form.get("mainImage");
   const galleryFiles = form.getAll("galleryImages");
+  const remoteMainImage = text(form, "mainImageUrl");
+  const remoteGallery = uploadedGallery(form);
   if (galleryFiles.length > 40) {
     throw new Error("A maximum of 40 gallery images can be uploaded at once.");
+  }
+  if (remoteMainImage && !isPublicBlobUrl(remoteMainImage)) {
+    throw new Error("The main image URL is not a valid Vercel Blob URL.");
+  }
+  if (!remoteGallery) {
+    throw new Error("One or more gallery image URLs are invalid.");
   }
   const mainImage =
     mainFile instanceof File ? await saveImage(mainFile, kind, slug) : null;
@@ -136,8 +166,8 @@ async function imageValues(form: FormData, kind: ContentKind, slug: string) {
   );
 
   return {
-    mainImage: mainImage ?? text(form, "existingMainImage"),
-    gallery: [...existingGallery(form), ...galleryUploads.filter((value): value is string => Boolean(value))],
+    mainImage: remoteMainImage || mainImage || text(form, "existingMainImage"),
+    gallery: [...existingGallery(form), ...remoteGallery, ...galleryUploads.filter((value): value is string => Boolean(value))],
   };
 }
 
@@ -148,10 +178,15 @@ function nextNumber(items: readonly { number: string }[]) {
 export async function GET() {
   if (!(await isAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const [projects, services, designLibrary] = await Promise.all([
+    getContent("projects", true),
+    getContent("services", true),
+    getContent("designLibrary", true),
+  ]);
   return NextResponse.json({
-    projects: getContent("projects", true),
-    services: getContent("services", true),
-    designLibrary: getContent("designLibrary", true),
+    projects,
+    services,
+    designLibrary,
   }, { headers: { "Cache-Control": "no-store" } });
 }
 
@@ -164,6 +199,9 @@ export async function PUT(request: Request) {
 
   try {
     const form = await request.formData();
+    if (process.env.VERCEL && ["mainImage", "galleryImages", "video"].some((key) => form.getAll(key).some((value) => value instanceof File && value.size > 0))) {
+      return NextResponse.json({ error: "Upload files directly to Vercel Blob before saving." }, { status: 400 });
+    }
     const kindValue = text(form, "kind");
     if (!isContentKind(kindValue)) {
       return NextResponse.json({ error: "Invalid content type." }, { status: 400 });
@@ -176,10 +214,12 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Use a valid title and URL slug." }, { status: 400 });
     }
 
-    const currentProjects = getProjects(true);
-    const currentServices = getServices(true);
-    const currentLibrary = getDesignLibrary(true);
-    const currentItems: Array<Project | Service | DesignCategory> = getContent(kindValue, true);
+    const [currentProjects, currentServices, currentLibrary, currentItems] = await Promise.all([
+      getProjects(true),
+      getServices(true),
+      getDesignLibrary(true),
+      getContent(kindValue, true),
+    ]);
     const current = currentItems.find((item) => item.slug === slug);
     const duplicate = currentItems.some((item) => item.slug === slug && item !== current);
     if (duplicate) return NextResponse.json({ error: "That slug is already in use." }, { status: 409 });
@@ -187,12 +227,15 @@ export async function PUT(request: Request) {
     const images = await imageValues(form, kindValue, slug);
     if (!images.mainImage) return NextResponse.json({ error: "A main image is required." }, { status: 400 });
     const videoFile = form.get("video");
-    const video =
-      videoFile instanceof File
-        ? await saveVideo(videoFile, kindValue, slug)
-        : text(form, "existingVideo");
-      const publishedValue = form.get("published");
-      const published = publishedValue === null || publishedValue === "true";
+    const remoteVideo = text(form, "videoUrl");
+    if (remoteVideo && !isPublicBlobUrl(remoteVideo)) {
+      throw new Error("The video URL is not a valid Vercel Blob URL.");
+    }
+    const video = remoteVideo || (videoFile instanceof File
+      ? await saveVideo(videoFile, kindValue, slug)
+      : text(form, "existingVideo"));
+    const publishedValue = form.get("published");
+    const published = publishedValue === null || publishedValue === "true";
 
     if (kindValue === "projects") {
       const item: Project = {
@@ -210,7 +253,7 @@ export async function PUT(request: Request) {
         published,
         ...(video ? { video } : {}),
       };
-      saveContent({ projects: currentProjects.some(({ slug: itemSlug }) => itemSlug === slug)
+      await saveContent({ projects: currentProjects.some(({ slug: itemSlug }) => itemSlug === slug)
         ? currentProjects.map((entry) => (entry.slug === slug ? item : entry))
         : [...currentProjects, item], services: currentServices, designLibrary: currentLibrary });
     } else if (kindValue === "services") {
@@ -225,7 +268,7 @@ export async function PUT(request: Request) {
         published,
         ...(video ? { video } : {}),
       };
-      saveContent({ projects: currentProjects, services: currentServices.some(({ slug: itemSlug }) => itemSlug === slug)
+      await saveContent({ projects: currentProjects, services: currentServices.some(({ slug: itemSlug }) => itemSlug === slug)
         ? currentServices.map((entry) => (entry.slug === slug ? item : entry))
         : [...currentServices, item], designLibrary: currentLibrary });
     } else {
@@ -238,12 +281,12 @@ export async function PUT(request: Request) {
         published,
         ...(video ? { video } : {}),
       };
-      saveContent({ projects: currentProjects, services: currentServices, designLibrary: currentLibrary.some(({ slug: itemSlug }) => itemSlug === slug)
+      await saveContent({ projects: currentProjects, services: currentServices, designLibrary: currentLibrary.some(({ slug: itemSlug }) => itemSlug === slug)
         ? currentLibrary.map((entry) => (entry.slug === slug ? item : entry))
         : [...currentLibrary, item] });
     }
 
-    recordActivity({
+    await recordActivity({
       type: "content_update",
       path: `/${kindValue}/${slug}`,
       category: kindValue === "projects" ? "project" : kindValue === "services" ? "service" : "designLibrary",
@@ -269,8 +312,8 @@ export async function DELETE(request: Request) {
     return NextResponse.json({ error: "A valid content type and slug are required." }, { status: 400 });
   }
 
-  deleteContent(body.kind, body.slug);
-  recordActivity({
+  await deleteContent(body.kind, body.slug);
+  await recordActivity({
     type: "content_update",
     path: `/${body.kind}/${body.slug}`,
     category: body.kind === "projects" ? "project" : body.kind === "services" ? "service" : "designLibrary",

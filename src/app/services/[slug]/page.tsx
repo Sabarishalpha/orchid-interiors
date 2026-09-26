@@ -23,7 +23,7 @@ export async function generateMetadata({
 }: ServicePageProps): Promise<Metadata> {
   const { slug } = await params;
 
-  const service = getServices().find((item) => item.slug === slug);
+  const service = (await getServices()).find((item) => item.slug === slug);
 
   return {
     title: service
@@ -40,7 +40,7 @@ export async function generateMetadata({
 export default async function ServiceDetailPage({ params }: ServicePageProps) {
   const { slug } = await params;
 
-  const service = getServices().find((item) => item.slug === slug);
+  const service = (await getServices()).find((item) => item.slug === slug);
 
   if (!service) {
     notFound();

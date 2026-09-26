@@ -14,7 +14,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/design-library" },
 };
 
-export default function DesignLibraryPage() {
+export default async function DesignLibraryPage() {
+  const categories = await getDesignLibrary();
   return (
     <>
       <Navbar />
@@ -22,7 +23,7 @@ export default function DesignLibraryPage() {
         image="/images/projects/1.png"
         imageAlt="Completed Orchid Interiors 3D design"
       />
-      <DesignLibrary categories={getDesignLibrary()} />
+      <DesignLibrary categories={categories} />
       <Footer />
     </>
   );

@@ -17,7 +17,9 @@ export async function generateMetadata({
   params,
 }: CategoryPageProps): Promise<Metadata> {
   const { category: slug } = await params;
-  const category = getDesignLibrary().find((item) => item.slug === slug);
+  const category = (await getDesignLibrary()).find(
+    (item) => item.slug === slug,
+  );
 
   if (!category) return {};
 
@@ -33,7 +35,9 @@ export default async function DesignCategoryPage({
   params,
 }: CategoryPageProps) {
   const { category: slug } = await params;
-  const category = getDesignLibrary().find((item) => item.slug === slug);
+  const category = (await getDesignLibrary()).find(
+    (item) => item.slug === slug,
+  );
 
   if (!category) notFound();
 

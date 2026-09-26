@@ -6,17 +6,18 @@ export const dynamic = "force-dynamic";
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://orchidinteriors.com";
 const lastModified = new Date("2026-09-10T00:00:00.000Z");
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  const projects = getProjects();
-  const services = getServices();
-  const designLibrary = getDesignLibrary();
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const [projects, services, designLibrary] = await Promise.all([
+    getProjects(),
+    getServices(),
+    getDesignLibrary(),
+  ]);
   const pages = [
     "",
     "/about",
     "/services",
     "/projects",
     "/contact",
-    "/orchid-interiors",
     "/design-library",
   ];
 
@@ -25,7 +26,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${siteUrl}${path}`,
       lastModified,
       changeFrequency: "monthly" as const,
-      priority: path === "" || path === "/orchid-interiors" ? 1 : 0.8,
+      priority: path === "" ? 1 : 0.8,
     })),
     ...projects.map((project) => ({
       url: `${siteUrl}/projects/${project.slug}`,

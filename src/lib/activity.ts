@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { getProductionRedis } from "./production-storage";
 
 export type ActivityType = "visitor" | "page_view" | "brochure_download" | "content_update";
 export type ActivityCategory = "project" | "service" | "designLibrary";
@@ -28,14 +29,34 @@ export type ActivityStats = {
 };
 
 const activityPath = path.join(process.cwd(), "data", "activity.json");
+const activityKey = "orchid-interiors:activity";
+const activitySeedKey = "orchid-interiors:activity-seeded";
 
-function readEvents(): ActivityEvent[] {
+function readLocalEvents(): ActivityEvent[] {
   try {
     const value = JSON.parse(fs.readFileSync(activityPath, "utf8"));
     return Array.isArray(value) ? (value as ActivityEvent[]) : [];
   } catch {
     return [];
   }
+}
+
+async function readEvents(): Promise<ActivityEvent[]> {
+  const redis = getProductionRedis();
+  if (!redis) return readLocalEvents();
+
+  let events = await redis.lrange<ActivityEvent>(activityKey, 0, 99999);
+  if (events.length) return events;
+
+  const seeded = await redis.set(activitySeedKey, "1", { nx: true });
+  if (seeded) {
+    const localEvents = readLocalEvents().slice(-100000);
+    if (localEvents.length) {
+      await redis.rpush(activityKey, ...localEvents);
+    }
+  }
+  events = await redis.lrange<ActivityEvent>(activityKey, 0, 99999);
+  return events;
 }
 
 function writeEvents(events: ActivityEvent[]) {
@@ -45,9 +66,18 @@ function writeEvents(events: ActivityEvent[]) {
   fs.renameSync(temporaryPath, activityPath);
 }
 
-export function recordActivity(event: Omit<ActivityEvent, "createdAt">) {
-  const events = readEvents();
-  events.push({ ...event, createdAt: new Date().toISOString() });
+export async function recordActivity(event: Omit<ActivityEvent, "createdAt">) {
+  const redis = getProductionRedis();
+  const nextEvent = { ...event, createdAt: new Date().toISOString() };
+  if (redis) {
+    if (!(await redis.exists(activitySeedKey))) await readEvents();
+    await redis.rpush(activityKey, nextEvent);
+    await redis.ltrim(activityKey, -100000, -1);
+    return;
+  }
+
+  const events = readLocalEvents();
+  events.push(nextEvent);
   writeEvents(events.slice(-100000));
 }
 
@@ -68,8 +98,8 @@ function percentageChange(current: number, previous: number) {
   return Math.round(((current - previous) / previous) * 100);
 }
 
-export function getActivityStats(range: ActivityRange = "7d"): ActivityStats {
-  const events = readEvents();
+export async function getActivityStats(range: ActivityRange = "7d"): Promise<ActivityStats> {
+  const events = await readEvents();
   const visitorIds = new Set(
     events.filter((event) => event.type === "visitor" && event.visitorId).map((event) => event.visitorId),
   );

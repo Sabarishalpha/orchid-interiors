@@ -4,7 +4,7 @@ Copy `.env.example` to `.env.local` and set `GEMINI_API_KEY` with a key from Goo
 
 ## Admin panel
 
-Set these values in `.env.local` before using `/admin/login`:
+Copy `.env.example` to `.env.local` and set these values before using `/admin/login`:
 
 ```env
 ADMIN_USERNAME=your_admin_username
@@ -16,7 +16,15 @@ When deploying from GitHub, `.env.local` is not committed to the repository. Add
 
 If the login page reports that the admin variables are not set, the deployment has not received these environment variables. If the deployment returns 404 for `/admin/login`, it is pointing at a different project or deployment than this repository.
 
-The admin panel stores edited content in `data/content-overrides.json` and uploaded images in `public/uploads/`. The public project, service and design-library routes read those files at request time, so changes appear immediately on a self-hosted or persistent filesystem deployment. The filesystem on serverless deployments such as Vercel is ephemeral; use a persistent volume or commit the generated files to the project for changes to survive redeployments.
+### Vercel storage
+
+Vercel's function filesystem is temporary, so production admin edits use Upstash Redis and uploaded media uses a **public** Vercel Blob store. Create/connect both stores to this Vercel project and enable Production and Development environments. The project needs `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, and `BLOB_READ_WRITE_TOKEN`; the Blob read-write token is required for the authenticated browser-upload flow. Keep the existing `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and `ADMIN_SESSION_SECRET` production variables as well.
+
+For a new deployment, pull the development credentials locally with `vercel env pull .env.local`, then run `npm run migrate:vercel` before the first production deploy. This uploads media referenced by `data/content-overrides.json` and seeds the content in Redis without changing the local JSON file. The migration stops and lists missing files rather than silently publishing broken media. Restore or remove any missing uploads first. The first activity request migrates existing `data/activity.json` events automatically.
+
+Set `NEXT_PUBLIC_SITE_URL` to the final HTTPS domain for correct sitemap URLs. Keep `.env.local` private and never commit real credentials. Bundled files under `public/images/` and `public/videos/` are deployed with the application; admin uploads are stored in Blob.
+
+Without Vercel, local development continues to use `data/content-overrides.json`, `data/activity.json`, and `public/uploads/`.
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

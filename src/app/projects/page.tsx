@@ -38,8 +38,8 @@ export const metadata: Metadata = {
   twitter: { images: ["/images/projects/1.png"] },
 };
 
-export default function ProjectsPage() {
-  const projects = getProjects().map((project) => ({
+export default async function ProjectsPage() {
+  const projects = (await getProjects()).map((project) => ({
     ...project,
     category: project.category as
       | "Residential"

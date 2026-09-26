@@ -4,6 +4,7 @@ import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { upload } from "@vercel/blob/client";
 import {
   FileDown,
   FolderKanban,
@@ -70,6 +71,12 @@ const emptyStats: Stats = {
   changes: { visitors: null, pageViews: null, downloads: null },
 };
 const getImages = (item?: Item) => item?.images ?? item?.gallery ?? [];
+const slugForUpload = (value: string) =>
+  value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-|-$/g, "");
 const labels: Record<Kind, string> = {
   projects: "Projects",
   services: "Services",
@@ -530,32 +537,115 @@ function Editor({
 }) {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [uploadPercent, setUploadPercent] = useState(0);
   const existing = getImages(item);
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSaving(true);
-    const form = new FormData(event.currentTarget);
-    form.set("kind", kind);
-    form.set(
-      "existingGallery",
-      JSON.stringify(kind === "designLibrary" ? existing.slice(1) : existing),
-    );
-    form.set(
-      "existingMainImage",
-      kind === "designLibrary" ? (existing[0] ?? "") : (item?.image ?? ""),
-    );
-    form.set("existingVideo", item?.video ?? "");
-    const response = await fetch("/api/admin/content", {
-      method: "PUT",
-      body: form,
-    });
-    const result = (await response.json()) as { error?: string; slug?: string };
-    setSaving(false);
-    if (!response.ok || !result.slug) {
-      onError(result.error ?? "Unable to save content.");
-      return;
+    setUploadPercent(0);
+    try {
+      const form = new FormData(event.currentTarget);
+      form.set("kind", kind);
+      form.set(
+        "existingGallery",
+        JSON.stringify(kind === "designLibrary" ? existing.slice(1) : existing),
+      );
+      form.set(
+        "existingMainImage",
+        kind === "designLibrary" ? (existing[0] ?? "") : (item?.image ?? ""),
+      );
+      form.set("existingVideo", item?.video ?? "");
+
+      const mainFile = form.get("mainImage");
+      const galleryFiles = form
+        .getAll("galleryImages")
+        .filter((file): file is File => file instanceof File && file.size > 0);
+      const videoFile = form.get("video");
+      const selectedFiles = [
+        ...(mainFile instanceof File && mainFile.size ? [mainFile] : []),
+        ...galleryFiles,
+        ...(videoFile instanceof File && videoFile.size ? [videoFile] : []),
+      ];
+
+      if (selectedFiles.length) {
+        const uploadSettings = await fetch("/api/admin/uploads");
+        const settings = (await uploadSettings.json()) as {
+          clientUploadsEnabled?: boolean;
+          directUploadsRequired?: boolean;
+          error?: string;
+        };
+        if (settings.clientUploadsEnabled) {
+          const totalSize = selectedFiles.reduce(
+            (total, file) => total + file.size,
+            0,
+          );
+          if (totalSize > 1024 * 1024 * 1024) {
+            throw new Error("The combined upload size must not exceed 1GB.");
+          }
+
+          const title = String(form.get("title") ?? "");
+          const slug = String(form.get("slug") || slugForUpload(title));
+          let mainImageUrl = "";
+          let videoUrl = "";
+          const galleryImageUrls: string[] = [];
+          let completedSize = 0;
+
+          for (const file of selectedFiles) {
+            const extension = file.name
+              .slice(file.name.lastIndexOf("."))
+              .toLowerCase();
+            const pathname = `uploads/${kind}/${slug}/${crypto.randomUUID()}${extension}`;
+            const blob = await upload(pathname, file, {
+              access: "public",
+              handleUploadUrl: "/api/admin/uploads",
+              multipart: file.size > 5 * 1024 * 1024,
+              clientPayload: JSON.stringify({ kind, slug }),
+              onUploadProgress: ({ loaded }) => {
+                setUploadPercent(
+                  Math.round(((completedSize + loaded) / totalSize) * 100),
+                );
+              },
+            });
+
+            if (file === mainFile) mainImageUrl = blob.url;
+            else if (file === videoFile) videoUrl = blob.url;
+            else galleryImageUrls.push(blob.url);
+            completedSize += file.size;
+          }
+
+          form.delete("mainImage");
+          form.delete("galleryImages");
+          form.delete("video");
+          form.set("mainImageUrl", mainImageUrl);
+          form.set("galleryImageUrls", JSON.stringify(galleryImageUrls));
+          form.set("videoUrl", videoUrl);
+        } else if (settings.directUploadsRequired) {
+          throw new Error(
+            settings.error ?? "Vercel Blob is not configured for uploads.",
+          );
+        }
+      }
+
+      const response = await fetch("/api/admin/content", {
+        method: "PUT",
+        body: form,
+      });
+      const result = (await response.json()) as {
+        error?: string;
+        slug?: string;
+      };
+      if (!response.ok || !result.slug) {
+        throw new Error(result.error ?? "Unable to save content.");
+      }
+      await onSaved(result.slug);
+    } catch (error) {
+      onError(
+        error instanceof Error ? error.message : "Unable to save content.",
+      );
+    } finally {
+      setSaving(false);
+      setUploadPercent(0);
     }
-    await onSaved(result.slug);
   }
 
   async function deleteItem() {
@@ -697,7 +787,13 @@ function Editor({
           type="submit"
           className="bg-black px-6 py-3 text-sm text-white hover:bg-stone-800 disabled:opacity-60"
         >
-          {saving ? "Saving..." : item ? "Save changes" : "Create entry"}
+          {saving
+            ? uploadPercent
+              ? `Uploading ${uploadPercent}%...`
+              : "Saving..."
+            : item
+              ? "Save changes"
+              : "Create entry"}
         </button>
         {item ? (
           <button

@@ -10,5 +10,5 @@ export async function GET(request: Request) {
   const range = ["today", "7d", "30d", "3m", "1y"].includes(rangeValue ?? "")
     ? (rangeValue as "today" | "7d" | "30d" | "3m" | "1y")
     : "7d";
-  return NextResponse.json(getActivityStats(range), { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json(await getActivityStats(range), { headers: { "Cache-Control": "no-store" } });
 }
