@@ -7,11 +7,11 @@ import ImageGallery from "../../components/ImageGallery";
 import PageHeader from "../../components/PageHeader";
 import { getDesignLibrary } from "@/lib/content";
 
-export const dynamic = "force-dynamic";
-
 type CategoryPageProps = {
   params: Promise<{ category: string }>;
 };
+
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,

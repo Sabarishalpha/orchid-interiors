@@ -6,8 +6,6 @@ import Link from "next/link";
 import PageHeader from "../components/PageHeader";
 import { getProjects } from "@/lib/content";
 
-export const dynamic = "force-dynamic";
-
 const projectProcess = [
   {
     title: "Discovery",
@@ -37,6 +35,8 @@ export const metadata: Metadata = {
   openGraph: { url: "/projects", images: ["/images/projects/1.png"] },
   twitter: { images: ["/images/projects/1.png"] },
 };
+
+export const dynamic = "force-dynamic";
 
 export default async function ProjectsPage() {
   const projects = (await getProjects()).map((project) => ({

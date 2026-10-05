@@ -6,7 +6,6 @@ import SmoothMotion from "./components/SmoothMotion";
 import ChatBot from "./components/ChatBot";
 import { ConsultationModalProvider } from "./components/ConsultationModalProvider";
 import GlobalConsultationModal from "./components/GlobalConsultationModal";
-import ActivityTracker from "./components/ActivityTracker";
 import ContextMenuGuard from "./components/ContextMenuGuard";
 import "./globals.css";
 
@@ -109,7 +108,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         ) : null}
         <ConsultationModalProvider>
           {children}
-          <ActivityTracker />
           <ContextMenuGuard />
           <SmoothMotion />
           <ChatBot />

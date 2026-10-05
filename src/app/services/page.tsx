@@ -6,8 +6,6 @@ import Link from "next/link";
 import PageHeader from "../components/PageHeader";
 import { getServices } from "@/lib/content";
 
-export const dynamic = "force-dynamic";
-
 const processSteps = [
   {
     title: "Consultation",
@@ -37,6 +35,8 @@ export const metadata: Metadata = {
   openGraph: { url: "/services", images: ["/images/services.jpg"] },
   twitter: { images: ["/images/services.jpg"] },
 };
+
+export const dynamic = "force-dynamic";
 
 export default async function ServicesPage() {
   const services = await getServices();

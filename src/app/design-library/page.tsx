@@ -5,14 +5,14 @@ import Footer from "../components/Footer";
 import PageHeader from "../components/PageHeader";
 import { getDesignLibrary } from "@/lib/content";
 
-export const dynamic = "force-dynamic";
-
 export const metadata: Metadata = {
   title: "Design Library",
   description:
     "Browse completed 3D interior designs by Orchid Interiors, organised by room and design style.",
   alternates: { canonical: "/design-library" },
 };
+
+export const dynamic = "force-dynamic";
 
 export default async function DesignLibraryPage() {
   const categories = await getDesignLibrary();

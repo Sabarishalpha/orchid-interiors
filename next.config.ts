@@ -4,11 +4,8 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
   images: {
     remotePatterns: [
-      { protocol: "https", hostname: "**.public.blob.vercel-storage.com" },
+      { protocol: "https", hostname: "firebasestorage.googleapis.com" },
     ],
-  },
-  experimental: {
-    proxyClientMaxBodySize: "1gb",
   },
   async headers() {
     return [

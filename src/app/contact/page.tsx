@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ChevronDown, Upload } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import PageHeader from "../components/PageHeader";
@@ -38,18 +38,6 @@ const PROJECT_TYPES = [
   "Other",
 ];
 
-const SERVICES = [
-  "Modular Kitchen",
-  "Bed Room",
-  "Living Room",
-  "Dining",
-  "Pooja Unit",
-  "Office & Workstation",
-  "Aluminium Doors & Partitions",
-  "Institutions",
-  "Hospitality",
-];
-
 const BUDGETS = [
   "Under ₹5 Lakhs",
   "₹5 – ₹10 Lakhs",
@@ -78,7 +66,7 @@ const FAQs = [
   {
     question: "What information should I provide for a consultation?",
     answer:
-      "It helps to share your budget, timeline, project location, and any reference images or inspiration. You can upload these directly in the form, or discuss them during our initial call. The more details you provide, the better we can tailor our proposal.",
+      "It helps to share your budget, timeline, project location, and any reference images or inspiration during our initial call. The more details you provide, the better we can tailor our proposal.",
   },
   {
     question: "Do you handle turnkey execution?",
@@ -118,17 +106,42 @@ const BENEFITS = [
 ];
 
 export default function ContactPage() {
+  const [serviceOptions, setServiceOptions] = useState<string[]>([]);
+  const [servicesLoadError, setServicesLoadError] = useState("");
   const [submitted, setSubmitted] = useState(false);
-  const [submissionError, setSubmissionError] = useState<string | null>(null);
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
-  const [uploadedFiles, setUploadedFiles] = useState<File[]>([]);
   const [openFAQ, setOpenFAQ] = useState<number | null>(0);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    void fetch("/api/content/services", { cache: "no-store" })
+      .then(async (response) => {
+        const result = (await response.json()) as {
+          items?: { title: string }[];
+          error?: string;
+        };
+        if (!response.ok) throw new Error(result.error ?? "Services could not be loaded.");
+        if (active) setServiceOptions((result.items ?? []).map((item) => item.title));
+      })
+      .catch((error: unknown) => {
+        console.error(
+          "Could not load enquiry service options:",
+          error instanceof Error ? error.message : "Unknown error",
+        );
+        if (active) setServicesLoadError("Service options are temporarily unavailable. Please try again shortly.");
+      });
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const {
     register,
     handleSubmit,
     setValue,
-    formState: { errors, isSubmitting },
+    formState: { errors },
     reset,
   } = useForm<ContactFormData>({
     resolver: zodResolver(contactSchema),
@@ -138,61 +151,40 @@ export default function ContactPage() {
     },
   });
 
-  const onSubmit = async (data: ContactFormData) => {
-    setSubmissionError(null);
+  const onSubmit = async (values: ContactFormData) => {
+    setSubmitError(null);
+    setIsSubmitting(true);
 
     try {
       const response = await fetch("/api/leads", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
-          name: data.name,
-          phone: data.phone,
-          email: data.email,
-          location: data.location,
-          propertyType: data.projectType,
-          interiorRequirement: data.services.join(", "),
-          propertySize: data.area || "Not specified",
-          budget: data.budget || "Not specified",
-          timeline: data.timeline || "Not specified",
-          message: `${data.message}${uploadedFiles.length > 0 ? `\nAttachments: ${uploadedFiles.map((file) => file.name).join(", ")}` : ""}`,
+          ...values,
+          source: "contact-page",
         }),
       });
 
+      const responseData = await response.json().catch(() => ({}));
+
       if (!response.ok) {
-        const result = (await response.json().catch(() => null)) as {
-          error?: string;
-        } | null;
-        throw new Error(result?.error || "Unable to send your enquiry.");
+        throw new Error(
+          responseData?.error || "We could not send your enquiry right now.",
+        );
       }
 
       setSubmitted(true);
     } catch (error) {
-      setSubmissionError(
+      setSubmitError(
         error instanceof Error
           ? error.message
-          : "Unable to send your enquiry. Please try again.",
+          : "We could not send your enquiry right now.",
       );
+    } finally {
+      setIsSubmitting(false);
     }
-  };
-
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const validFiles = files.filter((file) => {
-      const validTypes = [
-        "application/pdf",
-        "image/jpeg",
-        "image/png",
-        "image/jpg",
-      ];
-      const maxSize = 10 * 1024 * 1024; // 10MB
-      return validTypes.includes(file.type) && file.size <= maxSize;
-    });
-    setUploadedFiles((prev) => [...prev, ...validFiles]);
-  };
-
-  const removeFile = (index: number) => {
-    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const toggleService = (service: string) => {
@@ -208,9 +200,8 @@ export default function ContactPage() {
   const resetForm = () => {
     reset();
     setSubmitted(false);
-    setSubmissionError(null);
     setSelectedServices([]);
-    setUploadedFiles([]);
+    setSubmitError(null);
   };
 
   return (
@@ -417,9 +408,15 @@ export default function ContactPage() {
                     Thank you!
                   </h3>
                   <p className="mb-8 text-base text-stone-700">
-                    Your enquiry has been received. Our team will get back to
-                    you shortly.
+                    Your project enquiry has been sent successfully. Our team
+                    will be in touch with you shortly.
                   </p>
+                  <a
+                    href="tel:+919790352563"
+                    className="mb-6 border-b border-black pb-1 text-sm font-medium text-black"
+                  >
+                    Call +91 97903 52563
+                  </a>
                   <button
                     onClick={resetForm}
                     className="inline-flex items-center gap-2 border border-black px-6 py-3 text-sm font-medium text-black transition-all duration-300 hover:bg-black hover:text-white"
@@ -512,7 +509,11 @@ export default function ContactPage() {
                       Services Required <span className="text-red-600">*</span>
                     </label>
                     <div className="space-y-2">
-                      {SERVICES.map((service) => (
+                      {servicesLoadError ? (
+                        <p className="text-sm text-red-700">{servicesLoadError}</p>
+                      ) : serviceOptions.length === 0 ? (
+                        <p className="text-sm text-stone-500">Loading services...</p>
+                      ) : serviceOptions.map((service) => (
                         <label
                           key={service}
                           className="flex items-center gap-3"
@@ -621,49 +622,6 @@ export default function ContactPage() {
                     )}
                   </div>
 
-                  {/* File Upload */}
-                  <div data-form-field>
-                    <label className="mb-3 block text-sm font-medium text-black">
-                      Upload plans, drawings or reference images (Optional)
-                    </label>
-                    <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-stone-300 px-6 py-8 transition-all duration-300 hover:border-stone-400">
-                      <label className="flex cursor-pointer flex-col items-center gap-2">
-                        <Upload className="h-5 w-5 text-stone-600" />
-                        <span className="text-sm text-stone-700">
-                          Click to upload PDF, JPG, PNG (Max 10MB)
-                        </span>
-                        <input
-                          type="file"
-                          multiple
-                          accept=".pdf,.jpg,.jpeg,.png"
-                          onChange={handleFileUpload}
-                          className="hidden"
-                        />
-                      </label>
-                    </div>
-                    {uploadedFiles.length > 0 && (
-                      <div className="mt-4 space-y-2">
-                        {uploadedFiles.map((file, index) => (
-                          <div
-                            key={index}
-                            className="flex items-center justify-between rounded-lg bg-stone-50 px-4 py-2"
-                          >
-                            <span className="truncate text-sm text-stone-700">
-                              {file.name}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => removeFile(index)}
-                              className="text-xs text-red-600 hover:text-red-700"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
                   {/* Consent */}
                   <div data-form-field className="flex items-start gap-3">
                     <input
@@ -683,20 +641,20 @@ export default function ContactPage() {
                     </p>
                   )}
 
-                  {submissionError && (
-                    <p role="alert" className="text-sm text-red-600">
-                      {submissionError}
-                    </p>
+                  {/* Submit Button */}
+                  {submitError && (
+                    <p className="text-sm text-red-600">{submitError}</p>
                   )}
 
-                  {/* Submit Button */}
                   <button
                     type="submit"
-                    disabled={isSubmitting}
                     data-form-submit
-                    className="w-full border border-black bg-black px-6 py-4 text-base font-medium text-white transition-all duration-300 hover:bg-white hover:text-black disabled:opacity-60"
+                    disabled={isSubmitting}
+                    className="w-full border border-black bg-black px-6 py-4 text-base font-medium text-white transition-all duration-300 hover:bg-white hover:text-black disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {isSubmitting ? "Sending..." : "Send Enquiry →"}
+                    {isSubmitting
+                      ? "Sending your enquiry..."
+                      : "Continue to Contact Options →"}
                   </button>
                 </form>
               )}

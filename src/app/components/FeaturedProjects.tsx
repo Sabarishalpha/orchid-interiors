@@ -5,8 +5,10 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import gsap from "gsap";
 import { ArrowLeft, ArrowRight, ArrowUpRight } from "lucide-react";
+import type { Project as ProjectContent } from "../data/projects";
+import { resolveProjectAsset } from "@/lib/project-assets";
 
-type Project = {
+type FeaturedProject = {
   id: number;
   title: string;
   location: string;
@@ -15,55 +17,20 @@ type Project = {
   href: string;
 };
 
-const projects: Project[] = [
-  {
-    id: 1,
-    title: "The Harmonia Residence",
-    location: "Bangalore",
-    description:
-      "A home that balances warmth, elegance and calm through timeless interiors and refined natural materials.",
-    image: "/images/about-1.jpeg",
-    href: "/projects/harmonia-residence",
-  },
-  {
-    id: 2,
-    title: "The Aurelia Villa",
-    location: "Coimbatore",
-    description:
-      "A contemporary villa designed around light, openness and sophisticated details.",
-    image: "/images/about-2.jpeg",
-    href: "/projects/aurelia-villa",
-  },
-  {
-    id: 3,
-    title: "The Aria Residence",
-    location: "Chennai",
-    description:
-      "An elegant urban residence where modern architecture meets warm, expressive interiors.",
-    image: "/images/about-3.jpeg",
-    href: "/projects/aria-residence",
-  },
-  {
-    id: 4,
-    title: "The Elysian Home",
-    location: "Coimbatore",
-    description:
-      "A serene family home shaped by natural textures, soft tones and understated luxury.",
-    image: "/images/about-4.jpeg",
-    href: "/projects/elysian-home",
-  },
-  {
-    id: 5,
-    title: "The Solara Villa",
-    location: "Bangalore",
-    description:
-      "A statement residence combining sculptural architecture with warm contemporary interiors.",
-    image: "/images/about-5.jpeg",
-    href: "/projects/solara-villa",
-  },
-];
-
-export default function FeaturedProjects() {
+export default function FeaturedProjects({
+  projects: projectItems,
+}: {
+  projects: readonly ProjectContent[];
+}) {
+  const projects: FeaturedProject[] = projectItems.slice(0, 5).map((project) => ({
+    id: project.id,
+    title: project.title,
+    location: project.location,
+    description: project.description ?? `${project.category} interiors by Orchid Interiors.`,
+    image: resolveProjectAsset(project.image),
+    href: `/projects/${project.slug}`,
+  }));
+  const projectCount = projects.length;
   const [activeIndex, setActiveIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
 
@@ -176,15 +143,15 @@ export default function FeaturedProjects() {
    */
 
   const nextSlide = useCallback(() => {
-    const nextIndex = (activeIndex + 1) % projects.length;
+    const nextIndex = (activeIndex + 1) % projectCount;
     changeSlide(nextIndex, 1);
-  }, [activeIndex, changeSlide]);
+  }, [activeIndex, changeSlide, projectCount]);
 
   const previousSlide = useCallback(() => {
-    const previousIndex = (activeIndex - 1 + projects.length) % projects.length;
+    const previousIndex = (activeIndex - 1 + projectCount) % projectCount;
 
     changeSlide(previousIndex, -1);
-  }, [activeIndex, changeSlide]);
+  }, [activeIndex, changeSlide, projectCount]);
 
   /*
    * ------------------------------------------
@@ -193,17 +160,18 @@ export default function FeaturedProjects() {
    */
 
   const startAutoplay = useCallback(() => {
+    if (projectCount < 2) return;
     if (autoplayRef.current) {
       clearInterval(autoplayRef.current);
     }
 
     autoplayRef.current = setInterval(() => {
       if (!isAnimating) {
-        const nextIndex = (activeIndex + 1) % projects.length;
+        const nextIndex = (activeIndex + 1) % projectCount;
         changeSlide(nextIndex, 1);
       }
     }, 5500);
-  }, [activeIndex, changeSlide, isAnimating]);
+  }, [activeIndex, changeSlide, isAnimating, projectCount]);
 
   useEffect(() => {
     startAutoplay();
@@ -293,6 +261,8 @@ export default function FeaturedProjects() {
       if (mountedContent) gsap.killTweensOf(mountedContent.children);
     };
   }, []);
+
+  if (projects.length === 0) return null;
 
   return (
     <section

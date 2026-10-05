@@ -9,15 +9,15 @@ import ImageGallery from "../../components/ImageGallery";
 import { notFound } from "next/navigation";
 
 import { getProjects } from "@/lib/content";
-import { resolveProjectAsset } from "../../data/projects";
-
-export const dynamic = "force-dynamic";
+import { resolveProjectAsset } from "@/lib/project-assets";
 
 type ProjectPageProps = {
   params: Promise<{
     slug: string;
   }>;
 };
+
+export const dynamic = "force-dynamic";
 
 /* ==========================================================
    STATIC PROJECT PAGES

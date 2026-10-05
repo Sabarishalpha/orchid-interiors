@@ -12,6 +12,7 @@ import {
   User,
 } from "lucide-react";
 import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
 type Message = {
   id: string;
@@ -69,6 +70,7 @@ const INITIAL_MESSAGE: Message = {
 };
 
 export default function ChatBot() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const [input, setInput] = useState("");
@@ -76,9 +78,7 @@ export default function ChatBot() {
   const [isClosing, setIsClosing] = useState(false);
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [leadForm, setLeadForm] = useState<LeadFormData>(EMPTY_LEAD);
-  const [leadStatus, setLeadStatus] = useState<
-    "idle" | "submitting" | "success" | "error"
-  >("idle");
+  const [leadStatus, setLeadStatus] = useState<"idle" | "success">("idle");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -311,32 +311,66 @@ export default function ChatBot() {
 
   const submitLead = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setLeadStatus("submitting");
 
     try {
       const response = await fetch("/api/leads", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(leadForm),
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          source: "chatbot",
+          name: leadForm.name,
+          phone: leadForm.phone,
+          email: leadForm.email,
+          location: leadForm.location,
+          projectType: leadForm.propertyType,
+          requirement: leadForm.interiorRequirement,
+          area: leadForm.propertySize,
+          budget: leadForm.budget,
+          timeline: leadForm.timeline,
+          message: leadForm.message,
+        }),
       });
 
-      if (!response.ok) throw new Error("Lead submission failed");
+      const data = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          data?.error || "Unable to send your enquiry right now.",
+        );
+      }
 
       setLeadStatus("success");
+      setShowLeadForm(false);
+      setLeadForm(EMPTY_LEAD);
       setMessages((current) => [
         ...current,
         {
           id: getMessageId("lead"),
           role: "assistant",
           content:
-            "Thank you. Your enquiry is with our design team, and we will contact you shortly.",
+            "Thanks for your enquiry. Our team has received your project details and will get back to you shortly.",
         },
       ]);
     } catch (error) {
-      console.error("Lead submission error:", error);
-      setLeadStatus("error");
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to send your enquiry right now.";
+
+      setMessages((current) => [
+        ...current,
+        {
+          id: getMessageId("lead"),
+          role: "assistant",
+          content: `I couldn't send your enquiry: ${message}`,
+        },
+      ]);
     }
   };
+
+  if (pathname.startsWith("/admin")) return null;
 
   return (
     <>
@@ -903,21 +937,20 @@ export default function ChatBot() {
                   />
                   <button
                     type="submit"
-                    disabled={
-                      leadStatus === "submitting" || leadStatus === "success"
-                    }
+                    disabled={leadStatus === "success"}
                     className="mt-1 rounded-xl bg-black px-3 py-3 text-xs font-medium text-white transition-colors hover:bg-stone-800 disabled:opacity-50"
                   >
-                    {leadStatus === "submitting"
-                      ? "Sending..."
-                      : leadStatus === "success"
-                        ? "Enquiry sent"
-                        : "Send enquiry"}
+                    {leadStatus === "success"
+                      ? "Contact details shown"
+                      : "Show contact details"}
                   </button>
-                  {leadStatus === "error" && (
-                    <p className="text-center text-[11px] text-red-600">
-                      Unable to send right now. Please try again.
-                    </p>
+                  {leadStatus === "success" && (
+                    <a
+                      href="tel:+919790352563"
+                      className="block text-center text-[11px] text-stone-600 underline underline-offset-2"
+                    >
+                      Call +91 97903 52563
+                    </a>
                   )}
                 </form>
               ) : (

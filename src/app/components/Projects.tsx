@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { ArrowRight } from "lucide-react";
-import { PROJECTS, resolveProjectAsset } from "../data/projects";
+import { resolveProjectAsset } from "@/lib/project-assets";
 
 const CATEGORIES = [
   "Residential",
@@ -32,12 +32,12 @@ type ProjectShape = {
 
 type ProjectsProps = {
   projectLimit?: number;
-  projects?: readonly ProjectShape[];
+  projects: readonly ProjectShape[];
 };
 
 export default function Projects({
   projectLimit,
-  projects = PROJECTS as readonly ProjectShape[],
+  projects,
 }: ProjectsProps) {
   const [activeCategory, setActiveCategory] =
     useState<CategoryType>("Residential");

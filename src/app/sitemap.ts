@@ -1,10 +1,10 @@
 import type { MetadataRoute } from "next";
 import { getDesignLibrary, getProjects, getServices } from "@/lib/content";
 
-export const dynamic = "force-dynamic";
-
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://orchidinteriors.com";
 const lastModified = new Date("2026-09-10T00:00:00.000Z");
+
+export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [projects, services, designLibrary] = await Promise.all([

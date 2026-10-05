@@ -1,85 +1,123 @@
-import "server-only";
+import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
 
-import { createHmac, timingSafeEqual } from "node:crypto";
-import { cookies } from "next/headers";
+export const ADMIN_SESSION_COOKIE = "orchid-admin-session";
+export const ADMIN_OTP_COOKIE = "orchid-admin-otp";
+export const ADMIN_SESSION_MAX_AGE = 60 * 60 * 12;
+export const ADMIN_OTP_MAX_AGE = 60 * 10;
+export const ADMIN_OTP_COOKIE_PATH = "/api/admin/auth/verify";
 
-const COOKIE_NAME = "orchid_admin_session";
-const SESSION_TTL_SECONDS = 60 * 60 * 24;
+type AdminToken = {
+  email: string;
+  expiresAt: number;
+  nonce?: string;
+  codeVerifier?: string;
+};
 
-function getSecret() {
-  return process.env.ADMIN_SESSION_SECRET ?? "";
+function sign(value: string, secret: string) {
+  return createHmac("sha256", secret).update(value).digest("base64url");
 }
 
-function sign(value: string) {
-  return createHmac("sha256", getSecret()).update(value).digest("base64url");
+function createToken(payload: AdminToken, secret: string) {
+  const encodedPayload = Buffer.from(JSON.stringify(payload)).toString("base64url");
+  return `${encodedPayload}.${sign(encodedPayload, secret)}`;
 }
 
-function safeEqual(left: string, right: string) {
-  const leftBuffer = Buffer.from(left);
-  const rightBuffer = Buffer.from(right);
-  return leftBuffer.length === rightBuffer.length && timingSafeEqual(leftBuffer, rightBuffer);
+function readToken(token: string | undefined, secret: string): AdminToken | null {
+  if (!token || token.length > 2048) return null;
+
+  const [encodedPayload, signature, extra] = token.split(".");
+  if (!encodedPayload || !signature || extra) return null;
+
+  const expectedSignature = Buffer.from(sign(encodedPayload, secret));
+  const actualSignature = Buffer.from(signature);
+  if (
+    expectedSignature.length !== actualSignature.length ||
+    !timingSafeEqual(expectedSignature, actualSignature)
+  ) {
+    return null;
+  }
+
+  try {
+    const payload: unknown = JSON.parse(
+      Buffer.from(encodedPayload, "base64url").toString("utf8"),
+    );
+    if (
+      typeof payload !== "object" ||
+      payload === null ||
+      !("email" in payload) ||
+      typeof payload.email !== "string" ||
+      !("expiresAt" in payload) ||
+      typeof payload.expiresAt !== "number" ||
+      ("nonce" in payload && typeof payload.nonce !== "string") ||
+      ("codeVerifier" in payload && typeof payload.codeVerifier !== "string")
+    ) {
+      return null;
+    }
+
+    return payload as AdminToken;
+  } catch {
+    return null;
+  }
 }
 
-export function isAdminConfigured() {
+export function getAdminAuthConfig() {
+  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const secret = process.env.ADMIN_SESSION_SECRET;
+  if (!email || !secret || secret.length < 32) return null;
+  return { email, secret };
+}
+
+export function createAdminOtpChallenge(email: string, code: string, secret: string) {
+  const nonce = randomBytes(16).toString("base64url");
+  const codeVerifier = sign(`${nonce}:${code}`, secret);
+  return createToken(
+    { email, nonce, codeVerifier, expiresAt: Date.now() + ADMIN_OTP_MAX_AGE * 1000 },
+    secret,
+  );
+}
+
+export function verifyAdminOtpChallenge(
+  token: string | undefined,
+  code: string,
+  email: string,
+  secret: string,
+) {
+  const challenge = readToken(token, secret);
+  if (
+    !challenge ||
+    challenge.email !== email ||
+    !challenge.nonce ||
+    !challenge.codeVerifier ||
+    challenge.expiresAt <= Date.now()
+  ) {
+    return false;
+  }
+
+  const expected = Buffer.from(challenge.codeVerifier);
+  const actual = Buffer.from(sign(`${challenge.nonce}:${code}`, secret));
+  return expected.length === actual.length && timingSafeEqual(expected, actual);
+}
+
+export function createAdminSession(email: string, secret: string) {
+  return createToken(
+    { email, expiresAt: Date.now() + ADMIN_SESSION_MAX_AGE * 1000 },
+    secret,
+  );
+}
+
+export function isValidAdminSession(token: string | undefined, email: string, secret: string) {
+  const session = readToken(token, secret);
   return Boolean(
-    process.env.ADMIN_USERNAME &&
-      process.env.ADMIN_PASSWORD &&
-      getSecret().length >= 32,
+    session && session.email === email && session.expiresAt > Date.now(),
   );
 }
 
-export function isValidCredentials(username: string, password: string) {
-  if (username.length > 128 || password.length > 256) return false;
-  return (
-    isAdminConfigured() &&
-    safeEqual(username, process.env.ADMIN_USERNAME ?? "") &&
-    safeEqual(password, process.env.ADMIN_PASSWORD ?? "")
-  );
-}
-
-export function createSessionValue(username: string) {
-  const expiresAt = Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS;
-  const payload = `${username}.${expiresAt}`;
-  return `${payload}.${sign(payload)}`;
-}
-
-export function isValidSession(value: string | undefined) {
-  if (!value || !getSecret()) return false;
-
-  const parts = value.split(".");
-  if (parts.length !== 3) return false;
-
-  const [username, expiresAt, signature] = parts;
-  const payload = `${username}.${expiresAt}`;
-  const expires = Number(expiresAt);
-
-  return (
-    Number.isSafeInteger(expires) &&
-    expires > Math.floor(Date.now() / 1000) &&
-    safeEqual(signature, sign(payload))
-  );
-}
-
-export async function isAdmin() {
-  const cookieStore = await cookies();
-  return isValidSession(cookieStore.get(COOKIE_NAME)?.value);
-}
-
-export function getSessionCookie(value: string) {
+export function adminCookieOptions(maxAge: number, path: string) {
   return {
-    name: COOKIE_NAME,
-    value,
     httpOnly: true,
-    sameSite: "strict" as const,
     secure: process.env.NODE_ENV === "production",
-    maxAge: SESSION_TTL_SECONDS,
-    path: "/",
-  };
-}
-
-export function getExpiredSessionCookie() {
-  return {
-    ...getSessionCookie(""),
-    maxAge: 0,
+    sameSite: "strict" as const,
+    path,
+    maxAge,
   };
 }

@@ -10,13 +10,13 @@ import { notFound } from "next/navigation";
 
 import { getServices } from "@/lib/content";
 
-export const dynamic = "force-dynamic";
-
 type ServicePageProps = {
   params: Promise<{
     slug: string;
   }>;
 };
+
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,

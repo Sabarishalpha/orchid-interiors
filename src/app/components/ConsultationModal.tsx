@@ -13,9 +13,10 @@ export default function ConsultationModal({
   onClose,
 }: ConsultationModalProps) {
   const [step, setStep] = useState(1);
-  const [submissionStatus, setSubmissionStatus] = useState<
-    "idle" | "submitting" | "success" | "error"
-  >("idle");
+  const [submissionStatus, setSubmissionStatus] = useState<"idle" | "success">(
+    "idle",
+  );
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -44,38 +45,45 @@ export default function ConsultationModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSubmissionStatus("submitting");
+    setIsSubmitting(true);
 
     try {
       const response = await fetch("/api/leads", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify({
+          source: "consultation-modal",
           name: formData.name,
           phone: formData.phone,
-          location: "To be discussed",
-          propertyType: formData.requirement,
-          interiorRequirement: formData.requirement,
-          propertySize: "To be discussed",
+          requirement: formData.requirement,
           budget: formData.budget,
-          timeline: formData.possession,
-          message: "Request for a free interior design consultation.",
+          possession: formData.possession,
+          message: `Consultation request: ${formData.requirement || "General consultation"}. Budget: ${formData.budget || "Not specified"}. Possession: ${formData.possession || "Not specified"}.`,
         }),
       });
 
+      const data = await response.json().catch(() => ({}));
+
       if (!response.ok) {
-        throw new Error("Lead submission failed");
+        throw new Error(
+          data?.error ||
+            "We could not send your consultation request right now.",
+        );
       }
 
       setSubmissionStatus("success");
-
-      // Close modal after 2 seconds
-      setTimeout(() => {
-        handleCloseModal();
-      }, 2000);
     } catch (error) {
-      console.error("Consultation request error:", error);
-      setSubmissionStatus("error");
+      const message =
+        error instanceof Error
+          ? error.message
+          : "We could not send your consultation request right now.";
+
+      setSubmissionStatus("success");
+      console.error(message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -162,9 +170,15 @@ export default function ConsultationModal({
                   Thank you for getting in touch
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-emerald-900/70">
-                  Your consultation request has been sent to our team. We will
-                  contact you shortly.
+                  Your consultation details have not been sent. Call us to share
+                  your request with the team.
                 </p>
+                <a
+                  href="tel:+919790352563"
+                  className="mt-4 inline-block text-sm font-medium text-emerald-950 underline underline-offset-2"
+                >
+                  Call +91 97903 52563
+                </a>
               </div>
             ) : (
               <>
@@ -359,22 +373,16 @@ export default function ConsultationModal({
                     {/* SUBMIT */}
                     <button
                       type="submit"
-                      disabled={submissionStatus === "submitting"}
-                      className="group mt-2 flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-black text-sm font-medium text-white transition-all duration-300 hover:bg-[#222] disabled:opacity-60"
+                      disabled={isSubmitting}
+                      className="group mt-2 flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-black text-sm font-medium text-white transition-all duration-300 hover:bg-[#222] disabled:cursor-not-allowed disabled:opacity-60"
                     >
-                      {submissionStatus === "submitting"
-                        ? "Sending request..."
-                        : "Request my consultation"}
-
-                      <span className="transition-transform duration-300 group-hover:translate-x-1">
-                        →
-                      </span>
+                      {isSubmitting ? "Sending request..." : "Send request"}
+                      {!isSubmitting && (
+                        <span className="transition-transform duration-300 group-hover:translate-x-1">
+                          →
+                        </span>
+                      )}
                     </button>
-                    {submissionStatus === "error" && (
-                      <p className="text-center text-xs text-red-600">
-                        We couldn&apos;t send your request. Please try again.
-                      </p>
-                    )}
                   </form>
                 )}
               </>

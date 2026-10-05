@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useEffect, useRef } from "react";
-import { SERVICES } from "../data/services";
 
 type ServiceShape = {
   number: string;
@@ -17,9 +16,9 @@ type ServiceShape = {
 };
 
 export default function Services({
-  services = SERVICES as readonly ServiceShape[],
+  services,
 }: {
-  services?: readonly ServiceShape[];
+  services: readonly ServiceShape[];
 }) {
   const carouselRef = useRef<HTMLDivElement>(null);
 

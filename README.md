@@ -1,30 +1,33 @@
 ## Environment variables
 
-Copy `.env.example` to `.env.local` and set `GEMINI_API_KEY` with a key from Google AI Studio. Set `LEAD_WEBHOOK_URL` as well if you want enquiry forms to deliver leads to your mail or CRM webhook. Restart the development server after changing environment variables.
+Set `GEMINI_API_KEY` in `.env.local` with a key from Google AI Studio to enable the chat assistant. To deliver website enquiries by email, set `RESEND_API_KEY` and `RESEND_FROM_EMAIL` to a verified sender address in Resend. Configure these variables in the deployment environment as well as locally. Restart the development server after changing environment variables.
 
-## Admin panel
+Set `NEXT_PUBLIC_SITE_URL` to the final HTTPS domain for correct sitemap URLs. Keep `.env.local` private and never commit real credentials. Bundled files under `public/images/` and `public/videos/` are deployed with the application.
 
-Copy `.env.example` to `.env.local` and set these values before using `/admin/login`:
+## Admin sign-in
 
-```env
-ADMIN_USERNAME=your_admin_username
-ADMIN_PASSWORD=use_a_long_random_password
-ADMIN_SESSION_SECRET=use_a_different_long_random_secret
+Set `ADMIN_EMAIL` to the single email address allowed to sign in and `ADMIN_SESSION_SECRET` to a random secret of at least 32 characters. Admin sign-in sends a six-digit, ten-minute code using the existing `RESEND_API_KEY` and `RESEND_FROM_EMAIL` configuration. Set all four variables locally and in the production deployment environment. Admin sessions expire after 12 hours.
+
+Generate a session secret with `node -e "console.log(require('node:crypto').randomBytes(32).toString('base64url'))"`. Keep it private and never commit it.
+
+### Dynamic content and media
+
+The admin content manager stores Services, Design Library entries, and Projects in Firestore and uploads media to Firebase Storage. Create a Firebase project, enable Firestore and Storage, and create a service account with Firestore read/write and Storage object read/write permissions. Add these server-only environment variables locally and to Vercel:
+
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_CLIENT_EMAIL`
+- `FIREBASE_PRIVATE_KEY` (preserve PEM newlines as `\n` when entering the value)
+- `FIREBASE_STORAGE_BUCKET` (the bucket name, without `gs://`)
+
+The existing production JSON content is used to seed each Firestore collection the first time it is read while that collection is empty. Existing `/uploads/` media referenced by the seed content is copied into Firebase Storage as part of that first seed. Subsequent content edits and uploads are stored in Firebase; credentials never reach the browser.
+
+Direct browser uploads use short-lived, single-object signed URLs to report upload progress without sending large videos through a Vercel function. Apply [firebase-storage-cors.json](./firebase-storage-cors.json) to the bucket and add your production, preview, and local development site origins before testing uploads. For example, using Google Cloud CLI:
+
+```sh
+gcloud storage buckets update gs://YOUR_STORAGE_BUCKET --cors-file=firebase-storage-cors.json
 ```
 
-When deploying from GitHub, `.env.local` is not committed to the repository. Add the same three variables to the deployment provider's environment settings, for the production environment, then redeploy. For Vercel, open Project Settings > Environment Variables, add `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and `ADMIN_SESSION_SECRET` under Production, and redeploy. The values must be entered as secrets; do not commit `.env.local` or real credentials to GitHub.
-
-If the login page reports that the admin variables are not set, the deployment has not received these environment variables. If the deployment returns 404 for `/admin/login`, it is pointing at a different project or deployment than this repository.
-
-### Vercel storage
-
-Vercel's function filesystem is temporary, so production admin edits use Upstash Redis and uploaded media uses a **public** Vercel Blob store. Create/connect both stores to this Vercel project and enable Production and Development environments. The project needs `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, and `BLOB_READ_WRITE_TOKEN`; the Blob read-write token is required for the authenticated browser-upload flow. Keep the existing `ADMIN_USERNAME`, `ADMIN_PASSWORD`, and `ADMIN_SESSION_SECRET` production variables as well.
-
-For a new deployment, pull the development credentials locally with `vercel env pull .env.local`, then run `npm run migrate:vercel` before the first production deploy. This uploads media referenced by `data/content-overrides.json` and seeds the content in Redis without changing the local JSON file. The migration stops and lists missing files rather than silently publishing broken media. Restore or remove any missing uploads first. The first activity request migrates existing `data/activity.json` events automatically.
-
-Set `NEXT_PUBLIC_SITE_URL` to the final HTTPS domain for correct sitemap URLs. Keep `.env.local` private and never commit real credentials. Bundled files under `public/images/` and `public/videos/` are deployed with the application; admin uploads are stored in Blob.
-
-Without Vercel, local development continues to use `data/content-overrides.json`, `data/activity.json`, and `public/uploads/`.
+Until Firebase credentials are configured, the public site continues to use its bundled production content and the admin manager explains that Firebase setup is required.
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
