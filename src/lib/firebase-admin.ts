@@ -1,5 +1,6 @@
 import "server-only";
 import { cert, getApps, initializeApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 
@@ -41,6 +42,11 @@ export function getFirebaseServices() {
     db: getFirestore(app),
     bucket: getStorage(app).bucket(),
   };
+}
+
+export function getFirebaseAuth() {
+  const app = getFirebaseApp();
+  return app ? getAuth(app) : null;
 }
 
 export function isFirebaseConfigured() {

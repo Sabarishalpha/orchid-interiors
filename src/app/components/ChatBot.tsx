@@ -11,8 +11,9 @@ import {
   Sparkles,
   User,
 } from "lucide-react";
-import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
+import PhoneVerificationField from "./PhoneVerificationField";
 
 type Message = {
   id: string;
@@ -79,6 +80,7 @@ export default function ChatBot() {
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [leadForm, setLeadForm] = useState<LeadFormData>(EMPTY_LEAD);
   const [leadStatus, setLeadStatus] = useState<"idle" | "success">("idle");
+  const [leadPhoneVerificationToken, setLeadPhoneVerificationToken] = useState("");
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -308,9 +310,23 @@ export default function ChatBot() {
   const updateLeadField = (field: keyof LeadFormData, value: string) => {
     setLeadForm((current) => ({ ...current, [field]: value }));
   };
+  const handleLeadPhoneVerified = useCallback((token: string) => {
+    setLeadPhoneVerificationToken(token);
+  }, []);
 
   const submitLead = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!leadPhoneVerificationToken) {
+      setMessages((current) => [
+        ...current,
+        {
+          id: getMessageId("lead"),
+          role: "assistant",
+          content: "Please verify your mobile number before sending your enquiry.",
+        },
+      ]);
+      return;
+    }
 
     try {
       const response = await fetch("/api/leads", {
@@ -320,6 +336,7 @@ export default function ChatBot() {
         },
         body: JSON.stringify({
           source: "chatbot",
+          phoneVerificationToken: leadPhoneVerificationToken,
           name: leadForm.name,
           phone: leadForm.phone,
           email: leadForm.email,
@@ -344,6 +361,7 @@ export default function ChatBot() {
       setLeadStatus("success");
       setShowLeadForm(false);
       setLeadForm(EMPTY_LEAD);
+      setLeadPhoneVerificationToken("");
       setMessages((current) => [
         ...current,
         {
@@ -835,7 +853,6 @@ export default function ChatBot() {
                   {(
                     [
                       ["name", "Full name", "text"],
-                      ["phone", "Mobile number", "tel"],
                       ["email", "Email address", "email"],
                       ["location", "City / location", "text"],
                       [
@@ -857,6 +874,15 @@ export default function ChatBot() {
                       className="rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-xs text-black outline-none placeholder:text-stone-400 focus:border-stone-500"
                     />
                   ))}
+                  <PhoneVerificationField
+                    compact
+                    phone={leadForm.phone}
+                    onPhoneChange={(phone) => {
+                      updateLeadField("phone", phone);
+                      setLeadPhoneVerificationToken("");
+                    }}
+                    onVerified={handleLeadPhoneVerified}
+                  />
                   <select
                     required
                     value={leadForm.propertyType}
@@ -941,8 +967,8 @@ export default function ChatBot() {
                     className="mt-1 rounded-xl bg-black px-3 py-3 text-xs font-medium text-white transition-colors hover:bg-stone-800 disabled:opacity-50"
                   >
                     {leadStatus === "success"
-                      ? "Contact details shown"
-                      : "Show contact details"}
+                      ? "Enquiry sent"
+                      : "Send enquiry"}
                   </button>
                   {leadStatus === "success" && (
                     <a

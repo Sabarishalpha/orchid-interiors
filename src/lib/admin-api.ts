@@ -16,7 +16,7 @@ export function authorizeAdminRequest(request: NextRequest) {
   }
 
   const session = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
-  if (!isValidAdminSession(session, config.email, config.secret)) {
+  if (!isValidAdminSession(session, config.username, config.secret)) {
     return NextResponse.json({ error: "Sign in to manage website content." }, { status: 401 });
   }
 

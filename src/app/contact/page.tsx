@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
+import { useCallback, useEffect, useState } from "react";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ChevronDown } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import PageHeader from "../components/PageHeader";
+import PhoneVerificationField from "../components/PhoneVerificationField";
 
 // Zod validation schema
 const contactSchema = z.object({
@@ -113,6 +114,7 @@ export default function ContactPage() {
   const [openFAQ, setOpenFAQ] = useState<number | null>(0);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [phoneVerificationToken, setPhoneVerificationToken] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -141,6 +143,7 @@ export default function ContactPage() {
     register,
     handleSubmit,
     setValue,
+    control,
     formState: { errors },
     reset,
   } = useForm<ContactFormData>({
@@ -150,9 +153,17 @@ export default function ContactPage() {
       consent: false,
     },
   });
+  const phone = useWatch({ control, name: "phone" }) ?? "";
+  const handlePhoneVerified = useCallback((token: string) => {
+    setPhoneVerificationToken(token);
+  }, []);
 
   const onSubmit = async (values: ContactFormData) => {
     setSubmitError(null);
+    if (!phoneVerificationToken) {
+      setSubmitError("Verify your phone number before sending the enquiry.");
+      return;
+    }
     setIsSubmitting(true);
 
     try {
@@ -164,6 +175,7 @@ export default function ContactPage() {
         body: JSON.stringify({
           ...values,
           source: "contact-page",
+          phoneVerificationToken,
         }),
       });
 
@@ -202,6 +214,7 @@ export default function ContactPage() {
     setSubmitted(false);
     setSelectedServices([]);
     setSubmitError(null);
+    setPhoneVerificationToken("");
   };
 
   return (
@@ -464,14 +477,13 @@ export default function ContactPage() {
 
                   {/* Phone */}
                   <div data-form-field>
-                    <label className="mb-2 block text-sm font-medium text-black">
-                      Phone <span className="text-red-600">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      placeholder="Phone number"
-                      {...register("phone")}
-                      className="w-full border border-stone-300 bg-white px-4 py-3 text-base text-black outline-none transition-all duration-300 focus:border-black focus:ring-1 focus:ring-black"
+                    <PhoneVerificationField
+                      phone={phone}
+                      onPhoneChange={(value) => {
+                        setValue("phone", value, { shouldValidate: true });
+                        setPhoneVerificationToken("");
+                      }}
+                      onVerified={handlePhoneVerified}
                     />
                     {errors.phone && (
                       <p className="mt-1 text-xs text-red-600">

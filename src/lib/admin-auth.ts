@@ -1,16 +1,11 @@
-import { createHmac, randomBytes, timingSafeEqual } from "node:crypto";
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 
 export const ADMIN_SESSION_COOKIE = "orchid-admin-session";
-export const ADMIN_OTP_COOKIE = "orchid-admin-otp";
 export const ADMIN_SESSION_MAX_AGE = 60 * 60 * 12;
-export const ADMIN_OTP_MAX_AGE = 60 * 10;
-export const ADMIN_OTP_COOKIE_PATH = "/api/admin/auth/verify";
 
 type AdminToken = {
-  email: string;
+  username: string;
   expiresAt: number;
-  nonce?: string;
-  codeVerifier?: string;
 };
 
 function sign(value: string, secret: string) {
@@ -44,12 +39,10 @@ function readToken(token: string | undefined, secret: string): AdminToken | null
     if (
       typeof payload !== "object" ||
       payload === null ||
-      !("email" in payload) ||
-      typeof payload.email !== "string" ||
+      !("username" in payload) ||
+      typeof payload.username !== "string" ||
       !("expiresAt" in payload) ||
-      typeof payload.expiresAt !== "number" ||
-      ("nonce" in payload && typeof payload.nonce !== "string") ||
-      ("codeVerifier" in payload && typeof payload.codeVerifier !== "string")
+      typeof payload.expiresAt !== "number"
     ) {
       return null;
     }
@@ -61,54 +54,49 @@ function readToken(token: string | undefined, secret: string): AdminToken | null
 }
 
 export function getAdminAuthConfig() {
-  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  const username = process.env.ADMIN_USERNAME?.trim().toLowerCase();
+  const password = process.env.ADMIN_PASSWORD;
   const secret = process.env.ADMIN_SESSION_SECRET;
-  if (!email || !secret || secret.length < 32) return null;
-  return { email, secret };
+  if (!username || !password || !secret || secret.length < 32) return null;
+  return { username, password, secret };
 }
 
-export function createAdminOtpChallenge(email: string, code: string, secret: string) {
-  const nonce = randomBytes(16).toString("base64url");
-  const codeVerifier = sign(`${nonce}:${code}`, secret);
+function credentialDigest(value: string) {
+  return createHash("sha256").update(value).digest();
+}
+
+export function verifyAdminCredentials(
+  username: string,
+  password: string,
+  config: ReturnType<typeof getAdminAuthConfig>,
+) {
+  if (!config) return false;
+  const usernameMatches = timingSafeEqual(
+    credentialDigest(username.trim().toLowerCase()),
+    credentialDigest(config.username),
+  );
+  const passwordMatches = timingSafeEqual(
+    credentialDigest(password),
+    credentialDigest(config.password),
+  );
+  return usernameMatches && passwordMatches;
+}
+
+export function createAdminSession(username: string, secret: string) {
   return createToken(
-    { email, nonce, codeVerifier, expiresAt: Date.now() + ADMIN_OTP_MAX_AGE * 1000 },
+    { username, expiresAt: Date.now() + ADMIN_SESSION_MAX_AGE * 1000 },
     secret,
   );
 }
 
-export function verifyAdminOtpChallenge(
+export function isValidAdminSession(
   token: string | undefined,
-  code: string,
-  email: string,
+  username: string,
   secret: string,
 ) {
-  const challenge = readToken(token, secret);
-  if (
-    !challenge ||
-    challenge.email !== email ||
-    !challenge.nonce ||
-    !challenge.codeVerifier ||
-    challenge.expiresAt <= Date.now()
-  ) {
-    return false;
-  }
-
-  const expected = Buffer.from(challenge.codeVerifier);
-  const actual = Buffer.from(sign(`${challenge.nonce}:${code}`, secret));
-  return expected.length === actual.length && timingSafeEqual(expected, actual);
-}
-
-export function createAdminSession(email: string, secret: string) {
-  return createToken(
-    { email, expiresAt: Date.now() + ADMIN_SESSION_MAX_AGE * 1000 },
-    secret,
-  );
-}
-
-export function isValidAdminSession(token: string | undefined, email: string, secret: string) {
   const session = readToken(token, secret);
   return Boolean(
-    session && session.email === email && session.expiresAt > Date.now(),
+    session && session.username === username && session.expiresAt > Date.now(),
   );
 }
 

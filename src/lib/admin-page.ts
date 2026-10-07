@@ -13,7 +13,7 @@ export async function requireAdminPage() {
 
   const cookieStore = await cookies();
   const token = cookieStore.get(ADMIN_SESSION_COOKIE)?.value;
-  if (!isValidAdminSession(token, config.email, config.secret)) {
+  if (!isValidAdminSession(token, config.username, config.secret)) {
     redirect("/admin/login");
   }
 }

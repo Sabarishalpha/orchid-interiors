@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { Resend } from "resend";
 import { z } from "zod";
 import { clientAddress, isRateLimited, jsonLimit } from "../../../lib/security";
+import { getFirebaseAuth } from "../../../lib/firebase-admin";
+import { appendWebsiteLead } from "../../../lib/leads-sheet";
 
 const FIXED_RECIPIENT_EMAIL = "sabarish.2023@gmail.com";
 
@@ -9,6 +11,7 @@ const leadSchema = z.object({
   source: z.string().trim().max(80).default("website"),
   name: z.string().trim().min(2, "Name is required."),
   phone: z.string().trim().min(7, "Phone number is required."),
+  phoneVerificationToken: z.string().min(1).max(5000),
   email: z.string().trim().max(255).optional().default(""),
   projectType: z.string().trim().max(120).optional().default(""),
   services: z.array(z.string().trim().max(80)).optional().default([]),
@@ -25,28 +28,6 @@ const leadSchema = z.object({
 function formatLeadField(label: string, value: string) {
   if (!value || value === "Not provided") return "";
   return `<p><strong>${label}:</strong> ${value}</p>`;
-}
-
-function getResendErrorMessage(fromAddress: string, error: unknown): string {
-  const message =
-    typeof error === "object" && error && "message" in error
-      ? String((error as { message?: string }).message ?? "")
-      : "";
-
-  const lowerMessage = message.toLowerCase();
-  const senderIssue =
-    lowerMessage.includes("verified") ||
-    lowerMessage.includes("domain") ||
-    lowerMessage.includes("from") ||
-    lowerMessage.includes("invalid") ||
-    lowerMessage.includes("forbidden") ||
-    lowerMessage.includes("unauthorized");
-
-  if (senderIssue || /resend\.app|@gmail\.com/i.test(fromAddress)) {
-    return "The sender email is not verified in Resend. Please use a verified domain such as noreply@orchidinteriors.com, not Gmail or a Resend sandbox address, then try again.";
-  }
-
-  return "The enquiry could not be sent. Please try again in a moment.";
 }
 
 export async function POST(request: NextRequest) {
@@ -76,18 +57,87 @@ export async function POST(request: NextRequest) {
     }
 
     const lead = parsed.data;
+    const phoneDigits = lead.phone.replace(/\D/g, "");
+    const normalizedPhone =
+      phoneDigits.length === 12 && phoneDigits.startsWith("91")
+        ? `+${phoneDigits}`
+        : `+91${phoneDigits}`;
+    if (!/^\+91[6-9]\d{9}$/.test(normalizedPhone)) {
+      return NextResponse.json(
+        { error: "Enter a valid 10-digit Indian mobile number." },
+        { status: 400 },
+      );
+    }
+
+    const firebaseAuth = getFirebaseAuth();
+    if (!firebaseAuth) {
+      console.error("Firebase Phone Authentication is not configured.");
+      return NextResponse.json(
+        { error: "Phone verification is temporarily unavailable." },
+        { status: 503 },
+      );
+    }
+
+    try {
+      const decodedToken = await firebaseAuth.verifyIdToken(
+        lead.phoneVerificationToken,
+      );
+      if (decodedToken.phone_number !== normalizedPhone) {
+        return NextResponse.json(
+          { error: "The verified phone number does not match this request." },
+          { status: 401 },
+        );
+      }
+    } catch (error) {
+      console.warn(
+        "Enquiry phone verification failed:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
+      return NextResponse.json(
+        { error: "Phone verification expired. Verify your number again." },
+        { status: 401 },
+      );
+    }
+
+    try {
+      await appendWebsiteLead({
+        source: lead.source,
+        name: lead.name,
+        phone: normalizedPhone,
+        email: lead.email,
+        projectType: lead.projectType,
+        services: lead.services,
+        location: lead.location,
+        area: lead.area,
+        budget: lead.budget,
+        timeline: lead.timeline,
+        message: lead.message,
+        requirement: lead.requirement,
+        possession: lead.possession,
+      });
+    } catch (error) {
+      console.error(
+        "Could not add verified enquiry to Google Sheets:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
+      return NextResponse.json(
+        { error: "Your request could not be saved. Please try again later." },
+        { status: 503 },
+      );
+    }
+
     const apiKey = process.env.RESEND_API_KEY;
     const fromAddress = process.env.RESEND_FROM_EMAIL;
 
     if (!apiKey || !fromAddress) {
-      console.error("Missing Resend configuration. Set RESEND_API_KEY and RESEND_FROM_EMAIL.");
-      return NextResponse.json(
-        {
-          error:
-            "The enquiry service is not configured yet. Please add the Resend API key and verified sender email.",
-        },
-        { status: 503 },
+      console.warn(
+        "Verified enquiry was saved to Google Sheets, but its Resend email notification is not configured.",
       );
+      return NextResponse.json({
+        success: true,
+        message:
+          "Your verified request was saved for our team. Email notifications are not configured.",
+      });
     }
 
     const emailAddress = lead.email || "Not provided";
@@ -125,22 +175,31 @@ export async function POST(request: NextRequest) {
     `;
 
     const resend = new Resend(apiKey);
-    const result = await resend.emails.send({
-      from: fromAddress,
-      to: [FIXED_RECIPIENT_EMAIL],
-      replyTo: emailAddress !== "Not provided" ? emailAddress : undefined,
-      subject,
-      html,
-    });
+    let result;
+    try {
+      result = await resend.emails.send({
+        from: fromAddress,
+        to: [FIXED_RECIPIENT_EMAIL],
+        replyTo: emailAddress !== "Not provided" ? emailAddress : undefined,
+        subject,
+        html,
+      });
+    } catch (error) {
+      console.error("Resend notification failed after the lead was saved:", error);
+      return NextResponse.json({
+        success: true,
+        message:
+          "Your verified request was saved for our team, but its email notification could not be sent.",
+      });
+    }
 
     if (result.error) {
       console.error("Resend send failed:", result.error);
-      return NextResponse.json(
-        {
-          error: getResendErrorMessage(fromAddress, result.error),
-        },
-        { status: 502 },
-      );
+      return NextResponse.json({
+        success: true,
+        message:
+          "Your verified request was saved for our team, but its email notification could not be sent.",
+      });
     }
 
     return NextResponse.json({

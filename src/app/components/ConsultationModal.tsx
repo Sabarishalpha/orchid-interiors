@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ChevronDown, ArrowLeft, X } from "lucide-react";
+import PhoneVerificationField from "./PhoneVerificationField";
 
 interface ConsultationModalProps {
   isOpen: boolean;
@@ -16,7 +17,10 @@ export default function ConsultationModal({
   const [submissionStatus, setSubmissionStatus] = useState<"idle" | "success">(
     "idle",
   );
+  const [successMessage, setSuccessMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [verifiedPhoneToken, setVerifiedPhoneToken] = useState("");
+  const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
     name: "",
@@ -31,6 +35,7 @@ export default function ConsultationModal({
       ...prev,
       [field]: value,
     }));
+    if (field === "phone") setVerifiedPhoneToken("");
   };
 
   const handleNext = (e: React.FormEvent) => {
@@ -45,9 +50,13 @@ export default function ConsultationModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError("");
     setIsSubmitting(true);
 
     try {
+      if (!verifiedPhoneToken) {
+        throw new Error("Verify your phone number before sending the request.");
+      }
       const response = await fetch("/api/leads", {
         method: "POST",
         headers: {
@@ -56,7 +65,8 @@ export default function ConsultationModal({
         body: JSON.stringify({
           source: "consultation-modal",
           name: formData.name,
-          phone: formData.phone,
+          phone: `+91${formData.phone}`,
+          phoneVerificationToken: verifiedPhoneToken,
           requirement: formData.requirement,
           budget: formData.budget,
           possession: formData.possession,
@@ -67,12 +77,18 @@ export default function ConsultationModal({
       const data = await response.json().catch(() => ({}));
 
       if (!response.ok) {
+        if (response.status === 401) {
+          setVerifiedPhoneToken("");
+        }
         throw new Error(
           data?.error ||
             "We could not send your consultation request right now.",
         );
       }
 
+      setSuccessMessage(
+        data?.message ?? "Your verified consultation request has been sent to our team.",
+      );
       setSubmissionStatus("success");
     } catch (error) {
       const message =
@@ -80,14 +96,17 @@ export default function ConsultationModal({
           ? error.message
           : "We could not send your consultation request right now.";
 
-      setSubmissionStatus("success");
+      setError(message);
       console.error(message);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
+    setVerifiedPhoneToken("");
+    setError("");
+    setSuccessMessage("");
     setStep(1);
     setSubmissionStatus("idle");
     setFormData({
@@ -98,18 +117,22 @@ export default function ConsultationModal({
       possession: "",
     });
     onClose();
-  };
+  }, [onClose]);
+
+  const handlePhoneVerified = useCallback((token: string) => {
+    setVerifiedPhoneToken(token);
+  }, []);
 
   useEffect(() => {
     if (!isOpen) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+    if (event.key === "Escape") handleCloseModal();
     };
 
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
+  }, [isOpen, handleCloseModal]);
 
   if (!isOpen) return null;
 
@@ -170,8 +193,7 @@ export default function ConsultationModal({
                   Thank you for getting in touch
                 </h3>
                 <p className="mt-2 text-sm leading-6 text-emerald-900/70">
-                  Your consultation details have not been sent. Call us to share
-                  your request with the team.
+                  {successMessage}
                 </p>
                 <a
                   href="tel:+919790352563"
@@ -220,7 +242,6 @@ export default function ConsultationModal({
                         <div className="flex items-center border-r border-black/10 px-4 text-sm text-black/60">
                           +91
                         </div>
-
                         <input
                           id="modal-phone"
                           type="tel"
@@ -228,10 +249,7 @@ export default function ConsultationModal({
                           maxLength={10}
                           value={formData.phone}
                           onChange={(e) =>
-                            updateField(
-                              "phone",
-                              e.target.value.replace(/\D/g, ""),
-                            )
+                            updateField("phone", e.target.value.replace(/\D/g, "").slice(0, 10))
                           }
                           placeholder="Enter phone number"
                           required
@@ -261,7 +279,11 @@ export default function ConsultationModal({
                     {/* BACK */}
                     <button
                       type="button"
-                      onClick={() => setStep(1)}
+                      onClick={() => {
+                        setStep(1);
+                        setVerifiedPhoneToken("");
+                        setError("");
+                      }}
                       className="mb-2 flex items-center gap-2 text-xs text-black/45 transition-colors hover:text-black"
                     >
                       <ArrowLeft size={14} />
@@ -370,10 +392,23 @@ export default function ConsultationModal({
                       </div>
                     </div>
 
+                    <PhoneVerificationField
+                      phone={formData.phone}
+                      onPhoneChange={(phone) => updateField("phone", phone)}
+                      onVerified={handlePhoneVerified}
+                      showPhoneInput={false}
+                    />
+
+                    {error ? (
+                      <p aria-live="assertive" className="text-sm text-red-700">
+                        {error}
+                      </p>
+                    ) : null}
+
                     {/* SUBMIT */}
                     <button
                       type="submit"
-                      disabled={isSubmitting}
+                      disabled={isSubmitting || !verifiedPhoneToken}
                       className="group mt-2 flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-black text-sm font-medium text-white transition-all duration-300 hover:bg-[#222] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {isSubmitting ? "Sending request..." : "Send request"}
