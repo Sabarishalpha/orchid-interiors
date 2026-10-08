@@ -138,17 +138,5 @@
       "/images/projects/Ravichandram interior (11).jpg",
       "/images/projects/Ravichandram interior (12).jpg"
     ]
-  },
-  {
-    "number": "11",
-    "slug": "New design for Home Office",
-    "title": "Home Office",
-    "description": "A focused workspace redesign that combines clean storage, ergonomic planning, and a calm, productive mood.",
-    "images": [
-      "/uploads/design-library/1791183829676-maudlin-2.jpg.jpeg",
-      "/uploads/design-library/1791183833088-maudlin-2.jpg--1-.jpeg",
-      "/uploads/design-library/1791183839505-b1-1-1.jpg"
-    ],
-    "published": true
   }
 ]

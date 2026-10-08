@@ -12,7 +12,10 @@ export async function getServices() {
 }
 
 export async function getDesignLibrary() {
-  return (await getContentItems("design-library")) as DesignCategory[];
+  const categories = (await getContentItems("design-library")) as DesignCategory[];
+  return categories.filter(
+    (category) => category.slug !== "New design for Home Office",
+  );
 }
 
 export type { DesignCategory, Project, Service };
