@@ -14,7 +14,7 @@ Generate a session secret with `node -e "console.log(require('node:crypto').rand
 
 The admin content manager stores Services, Design Library entries, and Projects in Firestore and uploads media to Firebase Storage. Create a Firebase project, enable Firestore and Storage, and create a service account with Firestore read/write and Storage object read/write permissions. Add these server-only environment variables locally and to Vercel:
 
-- `FIREBASE_PROJECT_IDs`
+- `FIREBASE_PROJECT_ID`
 - `FIREBASE_CLIENT_EMAIL`
 - `FIREBASE_PRIVATE_KEY` (preserve PEM newlines as `\n` when entering the value)
 - `FIREBASE_STORAGE_BUCKET` (the bucket name, without `gs://`)
