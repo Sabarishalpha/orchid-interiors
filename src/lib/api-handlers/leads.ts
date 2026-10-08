@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { clientAddress, isRateLimited, jsonLimit } from "../../../lib/security";
-import { getFirebaseAuth } from "../../../lib/firebase-admin";
-import { appendWebsiteLead } from "../../../lib/leads-sheet";
+import { clientAddress, isRateLimited, jsonLimit } from "@/lib/security";
+import { getFirebaseAuth } from "@/lib/firebase-admin";
+import { appendWebsiteLead } from "@/lib/leads-sheet";
 
 const leadSchema = z.object({
   source: z.string().trim().max(80).default("website"),

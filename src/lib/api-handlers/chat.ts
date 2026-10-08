@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 import { NextRequest, NextResponse } from "next/server";
-import { BUSINESS_INFO } from "../../data/business";
-import { clientAddress, isRateLimited, jsonLimit } from "../../../lib/security";
+import { BUSINESS_INFO } from "@/app/data/business";
+import { clientAddress, isRateLimited, jsonLimit } from "@/lib/security";
 
 const SYSTEM_INSTRUCTION = `
 You are Orchid AI, the virtual interior design assistant for ${BUSINESS_INFO.companyName}.
