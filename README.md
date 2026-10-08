@@ -1,6 +1,6 @@
 ## Environment variables
 
-Set `GEMINI_API_KEY` in `.env.local` with a key from Google AI Studio to enable the chat assistant. To deliver website enquiries by email, set `RESEND_API_KEY` and `RESEND_FROM_EMAIL` to a verified sender address in Resend. Configure these variables in the deployment environment as well as locally. Restart the development server after changing environment variables.
+Set `GEMINI_API_KEY` in `.env.local` with a key from Google AI Studio to enable the chat assistant. Configure this variable locally and in the deployment environment, then restart the development server after changing environment variables.
 
 Set `NEXT_PUBLIC_SITE_URL` to the final HTTPS domain for correct sitemap URLs. Keep `.env.local` private and never commit real credentials. Bundled files under `public/images/` and `public/videos/` are deployed with the application.
 
@@ -31,7 +31,7 @@ Until Firebase credentials are configured, the public site continues to use its 
 
 ### Enquiry phone verification and Google Sheets
 
-All website enquiry forms (the “Talk to an Expert” popup, Contact page, and Orchid AI lead form) use Firebase Phone Authentication. After the visitor enters the code, the server verifies Firebase's ID token and matching phone number before saving the enquiry to Google Sheets and attempting the existing Resend notification.
+All website enquiry forms (the “Talk to an Expert” popup, Contact page, and Orchid AI lead form) use Firebase Phone Authentication. After the visitor enters the code, the server verifies Firebase's ID token and matching phone number before saving the enquiry to Google Sheets. The website does not send enquiry emails.
 
 1. In Firebase Console, enable **Authentication → Sign-in method → Phone** and register a Firebase web app. Add your production domain and `localhost` to Authentication's authorized domains.
 2. Set `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_APP_ID`, and `NEXT_PUBLIC_FIREBASE_PROJECT_ID` from the web app configuration in local and Vercel environments.

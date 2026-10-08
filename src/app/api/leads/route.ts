@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Resend } from "resend";
 import { z } from "zod";
 import { clientAddress, isRateLimited, jsonLimit } from "../../../lib/security";
 import { getFirebaseAuth } from "../../../lib/firebase-admin";
 import { appendWebsiteLead } from "../../../lib/leads-sheet";
-
-const FIXED_RECIPIENT_EMAIL = "sabarish.2023@gmail.com";
 
 const leadSchema = z.object({
   source: z.string().trim().max(80).default("website"),
@@ -24,11 +21,6 @@ const leadSchema = z.object({
   possession: z.string().trim().max(100).optional().default(""),
   consent: z.boolean().optional().default(true),
 });
-
-function formatLeadField(label: string, value: string) {
-  if (!value || value === "Not provided") return "";
-  return `<p><strong>${label}:</strong> ${value}</p>`;
-}
 
 export async function POST(request: NextRequest) {
   try {
@@ -126,85 +118,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const apiKey = process.env.RESEND_API_KEY;
-    const fromAddress = process.env.RESEND_FROM_EMAIL;
-
-    if (!apiKey || !fromAddress) {
-      console.warn(
-        "Verified enquiry was saved to Google Sheets, but its Resend email notification is not configured.",
-      );
-      return NextResponse.json({
-        success: true,
-        message:
-          "Your verified request was saved for our team. Email notifications are not configured.",
-      });
-    }
-
-    const emailAddress = lead.email || "Not provided";
-    const projectType = lead.projectType || lead.requirement || "General enquiry";
-    const location = lead.location || "Not provided";
-    const servicesText = lead.services.length ? lead.services.join(", ") : "Not provided";
-    const projectMessage =
-      lead.message ||
-      [
-        lead.requirement ? `Requirement: ${lead.requirement}` : "",
-        lead.possession ? `Possession: ${lead.possession}` : "",
-      ]
-        .filter(Boolean)
-        .join(" | ") ||
-      "No extra project notes were provided.";
-
-    const subject = `New enquiry from ${lead.name} – ${projectType}`;
-    const html = `
-      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #1f2937;">
-        <h2 style="margin-bottom: 12px;">New Orchid Interiors enquiry</h2>
-        ${formatLeadField("Source", lead.source)}
-        ${formatLeadField("Name", lead.name)}
-        ${formatLeadField("Phone", lead.phone)}
-        ${formatLeadField("Email", emailAddress)}
-        ${formatLeadField("Project type", projectType)}
-        ${formatLeadField("Service interest", servicesText)}
-        ${formatLeadField("Location", location)}
-        ${formatLeadField("Area", lead.area || "Not provided")}
-        ${formatLeadField("Budget", lead.budget || "Not provided")}
-        ${formatLeadField("Timeline", lead.timeline || "Not provided")}
-        ${formatLeadField("Possession", lead.possession || "Not provided")}
-        <p><strong>Project details:</strong></p>
-        <p>${projectMessage.replace(/\n/g, "<br />")}</p>
-      </div>
-    `;
-
-    const resend = new Resend(apiKey);
-    let result;
-    try {
-      result = await resend.emails.send({
-        from: fromAddress,
-        to: [FIXED_RECIPIENT_EMAIL],
-        replyTo: emailAddress !== "Not provided" ? emailAddress : undefined,
-        subject,
-        html,
-      });
-    } catch (error) {
-      console.error("Resend notification failed after the lead was saved:", error);
-      return NextResponse.json({
-        success: true,
-        message:
-          "Your verified request was saved for our team, but its email notification could not be sent.",
-      });
-    }
-
-    if (result.error) {
-      console.error("Resend send failed:", result.error);
-      return NextResponse.json({
-        success: true,
-        message:
-          "Your verified request was saved for our team, but its email notification could not be sent.",
-      });
-    }
-
     return NextResponse.json({
       success: true,
-      message: "Enquiry sent successfully.",
+      message: "Your verified enquiry was saved successfully.",
     });
   } catch (error) {
     console.error("Lead submission failed:", error);

@@ -188,7 +188,7 @@ export default function PhoneVerificationField({
           {sending
             ? "Sending code…"
             : confirmation
-              ? "Resend code"
+              ? "Send a new code"
               : "Send SMS verification code"}
         </button>
       ) : (
