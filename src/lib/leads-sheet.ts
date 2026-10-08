@@ -1,5 +1,9 @@
 import "server-only";
-import { google } from "googleapis";
+import { createSign } from "node:crypto";
+
+const GOOGLE_OAUTH_TOKEN_URL = "https://oauth2.googleapis.com/token";
+const GOOGLE_SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
+const GOOGLE_SHEETS_API_URL = "https://sheets.googleapis.com/v4/spreadsheets";
 
 type WebsiteLead = {
   source: string;
@@ -28,19 +32,64 @@ export async function appendWebsiteLead(lead: WebsiteLead) {
     );
   }
 
-  const auth = new google.auth.JWT({
-    email: clientEmail,
-    key: privateKey,
-    scopes: ["https://www.googleapis.com/auth/spreadsheets"],
-  });
-  const sheets = google.sheets({ version: "v4", auth });
+  const issuedAt = Math.floor(Date.now() / 1000);
+  const unsignedAssertion = [
+    Buffer.from(JSON.stringify({ alg: "RS256", typ: "JWT" })).toString("base64url"),
+    Buffer.from(
+      JSON.stringify({
+        iss: clientEmail,
+        scope: GOOGLE_SHEETS_SCOPE,
+        aud: GOOGLE_OAUTH_TOKEN_URL,
+        iat: issuedAt,
+        exp: issuedAt + 3600,
+      }),
+    ).toString("base64url"),
+  ].join(".");
+  const signer = createSign("RSA-SHA256");
+  signer.update(unsignedAssertion);
+  signer.end();
+  const assertion = `${unsignedAssertion}.${signer.sign(privateKey, "base64url")}`;
 
-  await sheets.spreadsheets.values.append({
-    spreadsheetId,
-    range: "Leads!A:O",
+  const tokenResponse = await fetch(GOOGLE_OAUTH_TOKEN_URL, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
+      assertion,
+    }),
+  });
+
+  if (!tokenResponse.ok) {
+    throw new Error(`Google OAuth token request failed (${tokenResponse.status}).`);
+  }
+
+  const tokenResult: unknown = await tokenResponse.json();
+  if (
+    typeof tokenResult !== "object" ||
+    tokenResult === null ||
+    !("access_token" in tokenResult) ||
+    typeof tokenResult.access_token !== "string"
+  ) {
+    throw new Error("Google OAuth returned an invalid access token response.");
+  }
+
+  const range = encodeURIComponent("Leads!A:O");
+  const appendUrl = new URL(
+    `${encodeURIComponent(spreadsheetId)}/values/${range}:append`,
+    `${GOOGLE_SHEETS_API_URL}/`,
+  );
+  appendUrl.search = new URLSearchParams({
     valueInputOption: "RAW",
     insertDataOption: "INSERT_ROWS",
-    requestBody: {
+  }).toString();
+
+  const appendResponse = await fetch(appendUrl, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${tokenResult.access_token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
       values: [[
         new Date().toISOString(),
         lead.source,
@@ -58,6 +107,10 @@ export async function appendWebsiteLead(lead: WebsiteLead) {
         lead.possession,
         "Verified",
       ]],
-    },
+    }),
   });
+
+  if (!appendResponse.ok) {
+    throw new Error(`Google Sheets append failed (${appendResponse.status}).`);
+  }
 }
