@@ -5,6 +5,29 @@ const GOOGLE_OAUTH_TOKEN_URL = "https://oauth2.googleapis.com/token";
 const GOOGLE_SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
 const GOOGLE_SHEETS_API_URL = "https://sheets.googleapis.com/v4/spreadsheets";
 
+export class GoogleSheetsConfigurationError extends Error {
+  constructor() {
+    super(
+      "Google Sheets is not configured. Set GOOGLE_SHEETS_SPREADSHEET_ID and the Firebase service-account credentials.",
+    );
+    this.name = "GoogleSheetsConfigurationError";
+  }
+}
+
+export class GoogleSheetsAccessError extends Error {
+  constructor() {
+    super("The service account does not have access to the Leads spreadsheet.");
+    this.name = "GoogleSheetsAccessError";
+  }
+}
+
+export class GoogleSheetsWorksheetError extends Error {
+  constructor() {
+    super("The spreadsheet must contain a worksheet tab named Leads.");
+    this.name = "GoogleSheetsWorksheetError";
+  }
+}
+
 type WebsiteLead = {
   source: string;
   name: string;
@@ -27,9 +50,7 @@ export async function appendWebsiteLead(lead: WebsiteLead) {
   const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
 
   if (!spreadsheetId || !clientEmail || !privateKey) {
-    throw new Error(
-      "Google Sheets is not configured. Set GOOGLE_SHEETS_SPREADSHEET_ID and the Firebase service-account credentials.",
-    );
+    throw new GoogleSheetsConfigurationError();
   }
 
   const issuedAt = Math.floor(Date.now() / 1000);
@@ -111,6 +132,12 @@ export async function appendWebsiteLead(lead: WebsiteLead) {
   });
 
   if (!appendResponse.ok) {
+    if (appendResponse.status === 403) {
+      throw new GoogleSheetsAccessError();
+    }
+    if (appendResponse.status === 400) {
+      throw new GoogleSheetsWorksheetError();
+    }
     throw new Error(`Google Sheets append failed (${appendResponse.status}).`);
   }
 }

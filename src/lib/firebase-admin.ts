@@ -1,6 +1,5 @@
 import "server-only";
 import { cert, getApps, initializeApp } from "firebase-admin/app";
-import { getAuth } from "firebase-admin/auth";
 import { getFirestore } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 
@@ -23,11 +22,16 @@ function getFirebaseApp() {
 }
 
 export function getFirebaseServices() {
-  const credentials = [
-    process.env.FIREBASE_PROJECT_ID,
+  const serviceCredentials = [
     process.env.FIREBASE_CLIENT_EMAIL,
     process.env.FIREBASE_PRIVATE_KEY,
     process.env.FIREBASE_STORAGE_BUCKET,
+  ];
+  if (serviceCredentials.every((credential) => !credential)) return null;
+
+  const credentials = [
+    process.env.FIREBASE_PROJECT_ID,
+    ...serviceCredentials,
   ];
   if (credentials.some(Boolean) && credentials.some((credential) => !credential)) {
     throw new Error(
@@ -42,11 +46,6 @@ export function getFirebaseServices() {
     db: getFirestore(app),
     bucket: getStorage(app).bucket(),
   };
-}
-
-export function getFirebaseAuth() {
-  const app = getFirebaseApp();
-  return app ? getAuth(app) : null;
 }
 
 export function isFirebaseConfigured() {

@@ -56,8 +56,9 @@ export default function PhoneVerificationField({
         );
       }
       verifier.current ??= new RecaptchaVerifier(auth, container.current, {
-        size: "invisible",
+        size: "normal",
       });
+      await verifier.current.render();
       const result = await signInWithPhoneNumber(
         auth,
         `+91${digits}`,
@@ -65,10 +66,19 @@ export default function PhoneVerificationField({
       );
       setConfirmation(result);
     } catch (sendError) {
+      const errorCode =
+        typeof sendError === "object" &&
+        sendError !== null &&
+        "code" in sendError &&
+        typeof sendError.code === "string"
+          ? sendError.code
+          : "";
       setError(
-        sendError instanceof Error
-          ? sendError.message
-          : "Could not send a verification code. Please try again.",
+        errorCode === "auth/invalid-app-credential"
+          ? "Firebase could not validate the app verification. Complete the reCAPTCHA and retry. If this continues, add this site to Firebase Authentication's authorized domains."
+          : sendError instanceof Error
+            ? sendError.message
+            : "Could not send a verification code. Please try again.",
       );
       verifier.current?.clear();
       verifier.current = null;

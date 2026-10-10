@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { clientAddress, isRateLimited, jsonLimit } from "@/lib/security";
-import { getFirebaseAuth } from "@/lib/firebase-admin";
-import { appendWebsiteLead } from "@/lib/leads-sheet";
+import { verifyFirebasePhoneToken } from "@/lib/firebase-phone-verification";
+import {
+  appendWebsiteLead,
+  GoogleSheetsAccessError,
+  GoogleSheetsConfigurationError,
+  GoogleSheetsWorksheetError,
+} from "@/lib/leads-sheet";
 
 const leadSchema = z.object({
   source: z.string().trim().max(80).default("website"),
@@ -61,32 +66,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const firebaseAuth = getFirebaseAuth();
-    if (!firebaseAuth) {
-      console.error("Firebase Phone Authentication is not configured.");
+    let verifiedPhone: string | null;
+    try {
+      verifiedPhone = await verifyFirebasePhoneToken(
+        lead.phoneVerificationToken,
+      );
+    } catch (error) {
+      console.error(
+        "Could not verify enquiry phone token:",
+        error instanceof Error ? error.message : "Unknown error",
+      );
       return NextResponse.json(
         { error: "Phone verification is temporarily unavailable." },
         { status: 503 },
       );
     }
-
-    try {
-      const decodedToken = await firebaseAuth.verifyIdToken(
-        lead.phoneVerificationToken,
-      );
-      if (decodedToken.phone_number !== normalizedPhone) {
-        return NextResponse.json(
-          { error: "The verified phone number does not match this request." },
-          { status: 401 },
-        );
-      }
-    } catch (error) {
-      console.warn(
-        "Enquiry phone verification failed:",
-        error instanceof Error ? error.message : "Unknown error",
-      );
+    if (!verifiedPhone) {
       return NextResponse.json(
         { error: "Phone verification expired. Verify your number again." },
+        { status: 401 },
+      );
+    }
+    if (verifiedPhone !== normalizedPhone) {
+      return NextResponse.json(
+        { error: "The verified phone number does not match this request." },
         { status: 401 },
       );
     }
@@ -113,7 +116,16 @@ export async function POST(request: NextRequest) {
         error instanceof Error ? error.message : "Unknown error",
       );
       return NextResponse.json(
-        { error: "Your request could not be saved. Please try again later." },
+        {
+          error:
+            error instanceof GoogleSheetsConfigurationError
+              ? "Enquiry saving is not configured. The site owner must set GOOGLE_SHEETS_SPREADSHEET_ID and the Google service-account credentials."
+              : error instanceof GoogleSheetsAccessError
+                ? "The Google service account cannot access this spreadsheet. Share the Leads spreadsheet with the service account email as an Editor."
+                : error instanceof GoogleSheetsWorksheetError
+                  ? "The Google spreadsheet needs a worksheet tab named Leads."
+              : "Your enquiry could not be saved to Google Sheets. Check that the Sheets API is enabled and the service account has Editor access to the Leads spreadsheet.",
+        },
         { status: 503 },
       );
     }
