@@ -11,9 +11,11 @@ import {
   Sparkles,
   User,
 } from "lucide-react";
-import { FormEvent, KeyboardEvent, useCallback, useEffect, useRef, useState } from "react";
+import { FormEvent, KeyboardEvent, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import PhoneVerificationField from "./PhoneVerificationField";
+import PhoneVerificationField, {
+  type PhoneVerificationFieldHandle,
+} from "./PhoneVerificationField";
 
 type Message = {
   id: string;
@@ -80,7 +82,11 @@ export default function ChatBot() {
   const [showLeadForm, setShowLeadForm] = useState(false);
   const [leadForm, setLeadForm] = useState<LeadFormData>(EMPTY_LEAD);
   const [leadStatus, setLeadStatus] = useState<"idle" | "success">("idle");
+  const [isLeadSubmitting, setIsLeadSubmitting] = useState(false);
   const [leadPhoneVerificationToken, setLeadPhoneVerificationToken] = useState("");
+  const leadPhoneVerificationRef = useRef<PhoneVerificationFieldHandle>(null);
+  const leadSubmitButtonRef = useRef<HTMLButtonElement>(null);
+  const pendingLeadSubmission = useRef<LeadFormData | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -305,29 +311,15 @@ export default function ChatBot() {
     setShowLeadForm(false);
     setLeadForm(EMPTY_LEAD);
     setLeadStatus("idle");
+    setLeadPhoneVerificationToken("");
+    pendingLeadSubmission.current = null;
   };
 
   const updateLeadField = (field: keyof LeadFormData, value: string) => {
     setLeadForm((current) => ({ ...current, [field]: value }));
   };
-  const handleLeadPhoneVerified = useCallback((token: string) => {
-    setLeadPhoneVerificationToken(token);
-  }, []);
-
-  const submitLead = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!leadPhoneVerificationToken) {
-      setMessages((current) => [
-        ...current,
-        {
-          id: getMessageId("lead"),
-          role: "assistant",
-          content: "Please verify your mobile number before sending your enquiry.",
-        },
-      ]);
-      return;
-    }
-
+  const sendLead = async (lead: LeadFormData, verificationToken: string) => {
+    setIsLeadSubmitting(true);
     try {
       const response = await fetch("/api/leads", {
         method: "POST",
@@ -336,17 +328,17 @@ export default function ChatBot() {
         },
         body: JSON.stringify({
           source: "chatbot",
-          phoneVerificationToken: leadPhoneVerificationToken,
-          name: leadForm.name,
-          phone: leadForm.phone,
-          email: leadForm.email,
-          location: leadForm.location,
-          projectType: leadForm.propertyType,
-          requirement: leadForm.interiorRequirement,
-          area: leadForm.propertySize,
-          budget: leadForm.budget,
-          timeline: leadForm.timeline,
-          message: leadForm.message,
+          phoneVerificationToken: verificationToken,
+          name: lead.name,
+          phone: lead.phone,
+          email: lead.email,
+          location: lead.location,
+          projectType: lead.propertyType,
+          requirement: lead.interiorRequirement,
+          area: lead.propertySize,
+          budget: lead.budget,
+          timeline: lead.timeline,
+          message: lead.message,
         }),
       });
 
@@ -385,7 +377,31 @@ export default function ChatBot() {
           content: `I couldn't send your enquiry: ${message}`,
         },
       ]);
+    } finally {
+      setIsLeadSubmitting(false);
     }
+  };
+
+  const handleLeadPhoneVerified = (token: string) => {
+    setLeadPhoneVerificationToken(token);
+    const lead = pendingLeadSubmission.current;
+    if (lead) {
+      pendingLeadSubmission.current = null;
+      void sendLead(lead, token);
+    }
+  };
+
+  const submitLead = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (isLeadSubmitting) return;
+    if (!leadPhoneVerificationToken) {
+      pendingLeadSubmission.current = { ...leadForm };
+      const codeRequested =
+        await leadPhoneVerificationRef.current?.requestCode();
+      if (!codeRequested) pendingLeadSubmission.current = null;
+      return;
+    }
+    await sendLead(leadForm, leadPhoneVerificationToken);
   };
 
   if (pathname.startsWith("/admin")) return null;
@@ -875,9 +891,12 @@ export default function ChatBot() {
                     />
                   ))}
                   <PhoneVerificationField
+                    ref={leadPhoneVerificationRef}
+                    captchaTriggerRef={leadSubmitButtonRef}
                     compact
                     phone={leadForm.phone}
                     onPhoneChange={(phone) => {
+                      pendingLeadSubmission.current = null;
                       updateLeadField("phone", phone);
                       setLeadPhoneVerificationToken("");
                     }}
@@ -962,13 +981,16 @@ export default function ChatBot() {
                     className="resize-none rounded-xl border border-stone-200 bg-stone-50 px-3 py-2.5 text-xs text-black outline-none placeholder:text-stone-400 focus:border-stone-500"
                   />
                   <button
+                    ref={leadSubmitButtonRef}
                     type="submit"
-                    disabled={leadStatus === "success"}
+                    disabled={leadStatus === "success" || isLeadSubmitting}
                     className="mt-1 rounded-xl bg-black px-3 py-3 text-xs font-medium text-white transition-colors hover:bg-stone-800 disabled:opacity-50"
                   >
                     {leadStatus === "success"
                       ? "Enquiry sent"
-                      : "Send enquiry"}
+                      : isLeadSubmitting
+                        ? "Sending enquiry..."
+                        : "Send enquiry"}
                   </button>
                   {leadStatus === "success" && (
                     <a

@@ -5,22 +5,45 @@ import {
   signInWithPhoneNumber,
   type ConfirmationResult,
 } from "firebase/auth";
-import { useEffect, useId, useRef, useState } from "react";
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useId,
+  useImperativeHandle,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import { getFirebaseClientAuth } from "@/lib/firebase-client";
 
-export default function PhoneVerificationField({
-  phone,
-  onPhoneChange,
-  onVerified,
-  compact = false,
-  showPhoneInput = true,
-}: {
+export type PhoneVerificationFieldHandle = {
+  requestCode: () => Promise<boolean>;
+};
+
+type PhoneVerificationFieldProps = {
   phone: string;
   onPhoneChange: (phone: string) => void;
   onVerified: (token: string) => void;
+  captchaTriggerRef?: RefObject<HTMLButtonElement | null>;
   compact?: boolean;
   showPhoneInput?: boolean;
-}) {
+};
+
+const PhoneVerificationField = forwardRef<
+  PhoneVerificationFieldHandle,
+  PhoneVerificationFieldProps
+>(function PhoneVerificationField(
+  {
+    phone,
+    onPhoneChange,
+    onVerified,
+    captchaTriggerRef,
+    compact = false,
+    showPhoneInput = true,
+  },
+  ref,
+) {
   const [confirmation, setConfirmation] = useState<ConfirmationResult | null>(
     null,
   );
@@ -30,6 +53,8 @@ export default function PhoneVerificationField({
   const [verified, setVerified] = useState(false);
   const verifier = useRef<RecaptchaVerifier | null>(null);
   const container = useRef<HTMLDivElement>(null);
+  const verificationAttempt = useRef(0);
+  const verifying = useRef(false);
   const inputId = useId();
   const digits = phone.replace(/\D/g, "").replace(/^91(?=\d{10}$)/, "");
 
@@ -40,23 +65,27 @@ export default function PhoneVerificationField({
     [],
   );
 
-  async function sendCode() {
+  const sendCode = useCallback(async () => {
     setError("");
+    if (sending) return true;
     if (digits.length !== 10) {
       setError("Enter a valid 10-digit Indian mobile number.");
-      return;
+      return false;
     }
 
+    const attempt = ++verificationAttempt.current;
     setSending(true);
     try {
       const auth = getFirebaseClientAuth();
-      if (!container.current) {
+      const captchaTrigger = captchaTriggerRef?.current;
+      const captchaContainer = captchaTrigger ?? container.current;
+      if (!captchaContainer) {
         throw new Error(
           "Phone verification could not be initialized. Please try again.",
         );
       }
-      verifier.current ??= new RecaptchaVerifier(auth, container.current, {
-        size: "normal",
+      verifier.current ??= new RecaptchaVerifier(auth, captchaContainer, {
+        size: "invisible",
       });
       await verifier.current.render();
       const result = await signInWithPhoneNumber(
@@ -64,8 +93,12 @@ export default function PhoneVerificationField({
         `+91${digits}`,
         verifier.current,
       );
+      if (attempt !== verificationAttempt.current) return false;
       setConfirmation(result);
+      setCode("");
+      return true;
     } catch (sendError) {
+      if (attempt !== verificationAttempt.current) return false;
       const errorCode =
         typeof sendError === "object" &&
         sendError !== null &&
@@ -75,37 +108,56 @@ export default function PhoneVerificationField({
           : "";
       setError(
         errorCode === "auth/invalid-app-credential"
-          ? "Firebase could not validate the app verification. Complete the reCAPTCHA and retry. If this continues, add this site to Firebase Authentication's authorized domains."
+          ? "Firebase could not verify this app. Check that this site is listed in Firebase Authentication's authorized domains, then try again."
           : sendError instanceof Error
             ? sendError.message
             : "Could not send a verification code. Please try again.",
       );
       verifier.current?.clear();
       verifier.current = null;
+      return false;
     } finally {
-      setSending(false);
+      if (attempt === verificationAttempt.current) setSending(false);
     }
-  }
+  }, [captchaTriggerRef, digits, sending]);
 
-  async function verifyCode() {
-    if (!confirmation || !/^\d{6}$/.test(code)) return;
+  const requestCode = useCallback(async () => {
+    return sendCode();
+  }, [sendCode]);
+
+  useImperativeHandle(ref, () => ({ requestCode }), [requestCode]);
+
+  const verifyCode = useCallback(async (verificationCode: string) => {
+    if (!confirmation || !/^\d{6}$/.test(verificationCode) || verifying.current) {
+      return;
+    }
+
+    const attempt = ++verificationAttempt.current;
+    verifying.current = true;
     setError("");
     setSending(true);
     try {
-      const credential = await confirmation.confirm(code);
+      const credential = await confirmation.confirm(verificationCode);
+      if (attempt !== verificationAttempt.current) return;
       const token = await credential.user.getIdToken();
+      if (attempt !== verificationAttempt.current) return;
       setVerified(true);
       onVerified(token);
     } catch (verifyError) {
-      setError(
-        verifyError instanceof Error
-          ? verifyError.message
-          : "The code is invalid or expired. Please try again.",
-      );
+      if (attempt === verificationAttempt.current) {
+        setError(
+          verifyError instanceof Error
+            ? verifyError.message
+            : "The code is invalid or expired. Please try again.",
+        );
+      }
     } finally {
-      setSending(false);
+      if (attempt === verificationAttempt.current) {
+        verifying.current = false;
+        setSending(false);
+      }
     }
-  }
+  }, [confirmation, onVerified]);
 
   const inputClass = compact
     ? "min-w-0 flex-1 bg-transparent px-3 py-2.5 text-xs text-black outline-none"
@@ -147,6 +199,9 @@ export default function PhoneVerificationField({
             required
             value={digits}
             onChange={(event) => {
+              verificationAttempt.current += 1;
+              verifying.current = false;
+              setSending(false);
               setConfirmation(null);
               setCode("");
               setVerified(false);
@@ -163,7 +218,7 @@ export default function PhoneVerificationField({
       ) : null}
 
       {confirmation && !verified ? (
-        <div className="flex gap-2">
+        <div>
           <input
             aria-label="SMS verification code"
             type="text"
@@ -171,37 +226,27 @@ export default function PhoneVerificationField({
             autoComplete="one-time-code"
             maxLength={6}
             value={code}
-            onChange={(event) =>
-              setCode(event.target.value.replace(/\D/g, "").slice(0, 6))
-            }
+            onChange={(event) => {
+              const nextCode = event.target.value.replace(/\D/g, "").slice(0, 6);
+              setCode(nextCode);
+              if (nextCode.length === 6) void verifyCode(nextCode);
+            }}
             placeholder="6-digit SMS code"
-            className={`${inputClass} rounded-lg border border-stone-300 bg-white`}
+            className={`${inputClass} w-full rounded-lg border border-stone-300 bg-white`}
           />
-          <button
-            type="button"
-            onClick={() => void verifyCode()}
-            disabled={sending || code.length !== 6}
-            className="shrink-0 rounded-lg bg-stone-900 px-3 py-2 text-xs font-medium text-white disabled:opacity-50"
-          >
-            {sending ? "Verifying…" : "Verify"}
-          </button>
+          <p className="mt-1 text-xs text-stone-600">
+            Enter the 6-digit code sent to your phone. It will verify automatically.
+          </p>
         </div>
       ) : null}
 
-      {!verified ? (
-        <button
-          type="button"
-          onClick={() => void sendCode()}
-          disabled={sending || digits.length !== 10}
-          className="text-xs font-medium text-stone-700 underline underline-offset-4 disabled:opacity-50"
-        >
-          {sending
-            ? "Sending code…"
-            : confirmation
-              ? "Send a new code"
-              : "Send SMS verification code"}
-        </button>
-      ) : (
+      {sending && !confirmation ? (
+        <p role="status" className="text-xs text-stone-600">
+          Sending verification code…
+        </p>
+      ) : null}
+
+      {verified && (
         <p className="text-xs font-medium text-emerald-700">
           Phone number verified.
         </p>
@@ -215,4 +260,6 @@ export default function PhoneVerificationField({
       <div ref={container} />
     </div>
   );
-}
+});
+
+export default PhoneVerificationField;

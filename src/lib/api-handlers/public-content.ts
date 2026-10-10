@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isContentKind } from "@/lib/content-schema";
-import { getContentItems } from "@/lib/content-store";
+import { getPublicContentItems } from "@/lib/content-store";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,7 +15,7 @@ export async function GET(
   }
 
   try {
-    return NextResponse.json({ items: await getContentItems(kind) });
+    return NextResponse.json({ items: await getPublicContentItems(kind) });
   } catch (error) {
     console.error(
       "Could not load public content:",

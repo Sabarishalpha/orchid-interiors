@@ -5,6 +5,7 @@ import { verifyFirebasePhoneToken } from "@/lib/firebase-phone-verification";
 import {
   appendWebsiteLead,
   GoogleSheetsAccessError,
+  GoogleSheetsAuthenticationError,
   GoogleSheetsConfigurationError,
   GoogleSheetsWorksheetError,
 } from "@/lib/leads-sheet";
@@ -119,12 +120,14 @@ export async function POST(request: NextRequest) {
         {
           error:
             error instanceof GoogleSheetsConfigurationError
-              ? "Enquiry saving is not configured. The site owner must set GOOGLE_SHEETS_SPREADSHEET_ID and the Google service-account credentials."
-              : error instanceof GoogleSheetsAccessError
-                ? "The Google service account cannot access this spreadsheet. Share the Leads spreadsheet with the service account email as an Editor."
-                : error instanceof GoogleSheetsWorksheetError
-                  ? "The Google spreadsheet needs a worksheet tab named Leads."
-              : "Your enquiry could not be saved to Google Sheets. Check that the Sheets API is enabled and the service account has Editor access to the Leads spreadsheet.",
+              ? "Enquiry saving is not configured. The site owner must set GOOGLE_SHEETS_SPREADSHEET_ID and the Google Sheets service-account credentials."
+              : error instanceof GoogleSheetsAuthenticationError
+                ? "The Google Sheets service-account email and private key do not match, or the key has been revoked. Set both Sheets credentials from the same active service-account JSON key."
+                : error instanceof GoogleSheetsAccessError
+                  ? "The Google Sheets service account cannot access this spreadsheet. Share the Leads spreadsheet with that account as an Editor."
+                  : error instanceof GoogleSheetsWorksheetError
+                    ? "The Google spreadsheet needs a worksheet tab named Leads."
+                    : "Your enquiry could not be saved to Google Sheets. Check that the Sheets API is enabled and the service account has Editor access to the Leads spreadsheet.",
         },
         { status: 503 },
       );

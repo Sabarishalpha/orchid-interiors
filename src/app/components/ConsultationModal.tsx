@@ -1,8 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronDown, ArrowLeft, X } from "lucide-react";
-import PhoneVerificationField from "./PhoneVerificationField";
+import PhoneVerificationField, {
+  type PhoneVerificationFieldHandle,
+} from "./PhoneVerificationField";
 
 interface ConsultationModalProps {
   isOpen: boolean;
@@ -21,6 +23,9 @@ export default function ConsultationModal({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [verifiedPhoneToken, setVerifiedPhoneToken] = useState("");
   const [error, setError] = useState("");
+  const phoneVerificationRef = useRef<PhoneVerificationFieldHandle>(null);
+  const phoneSubmitButtonRef = useRef<HTMLButtonElement>(null);
+  const pendingSubmission = useRef(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -48,15 +53,10 @@ export default function ConsultationModal({
     setStep(2);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError("");
+  const submitRequest = useCallback(async (verificationToken: string) => {
     setIsSubmitting(true);
 
     try {
-      if (!verifiedPhoneToken) {
-        throw new Error("Verify your phone number before sending the request.");
-      }
       const response = await fetch("/api/leads", {
         method: "POST",
         headers: {
@@ -66,7 +66,7 @@ export default function ConsultationModal({
           source: "consultation-modal",
           name: formData.name,
           phone: `+91${formData.phone}`,
-          phoneVerificationToken: verifiedPhoneToken,
+          phoneVerificationToken: verificationToken,
           requirement: formData.requirement,
           budget: formData.budget,
           possession: formData.possession,
@@ -101,10 +101,23 @@ export default function ConsultationModal({
     } finally {
       setIsSubmitting(false);
     }
+  }, [formData]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (!verifiedPhoneToken) {
+      pendingSubmission.current = true;
+      const codeRequested = await phoneVerificationRef.current?.requestCode();
+      if (!codeRequested) pendingSubmission.current = false;
+      return;
+    }
+    await submitRequest(verifiedPhoneToken);
   };
 
   const handleCloseModal = useCallback(() => {
     setVerifiedPhoneToken("");
+    pendingSubmission.current = false;
     setError("");
     setSuccessMessage("");
     setStep(1);
@@ -121,7 +134,11 @@ export default function ConsultationModal({
 
   const handlePhoneVerified = useCallback((token: string) => {
     setVerifiedPhoneToken(token);
-  }, []);
+    if (pendingSubmission.current) {
+      pendingSubmission.current = false;
+      void submitRequest(token);
+    }
+  }, [submitRequest]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -282,6 +299,7 @@ export default function ConsultationModal({
                       onClick={() => {
                         setStep(1);
                         setVerifiedPhoneToken("");
+                        pendingSubmission.current = false;
                         setError("");
                       }}
                       className="mb-2 flex items-center gap-2 text-xs text-black/45 transition-colors hover:text-black"
@@ -393,6 +411,8 @@ export default function ConsultationModal({
                     </div>
 
                     <PhoneVerificationField
+                      ref={phoneVerificationRef}
+                      captchaTriggerRef={phoneSubmitButtonRef}
                       phone={formData.phone}
                       onPhoneChange={(phone) => updateField("phone", phone)}
                       onVerified={handlePhoneVerified}
@@ -407,8 +427,9 @@ export default function ConsultationModal({
 
                     {/* SUBMIT */}
                     <button
+                      ref={phoneSubmitButtonRef}
                       type="submit"
-                      disabled={isSubmitting || !verifiedPhoneToken}
+                      disabled={isSubmitting}
                       className="group mt-2 flex h-14 w-full items-center justify-center gap-3 rounded-xl bg-black text-sm font-medium text-white transition-all duration-300 hover:bg-[#222] disabled:cursor-not-allowed disabled:opacity-60"
                     >
                       {isSubmitting ? "Sending request..." : "Send request"}

@@ -118,6 +118,18 @@ export async function getContentItems(kind: ContentKind, includeUnpublished = fa
     );
 }
 
+export async function getPublicContentItems(kind: ContentKind) {
+  try {
+    return await getContentItems(kind);
+  } catch (error) {
+    console.error(
+      `Could not load public ${kind} from Firebase; using bundled production content:`,
+      error instanceof Error ? error.message : "Unknown error",
+    );
+    return seedData[kind].filter((item) => item.published !== false);
+  }
+}
+
 export async function getContentItem(kind: ContentKind, slug: string) {
   return (await getContentItems(kind)).find((item) => item.slug === slug) ?? null;
 }

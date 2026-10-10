@@ -35,9 +35,10 @@ All website enquiry forms (the “Talk to an Expert” popup, Contact page, and 
 
 1. In Firebase Console, enable **Authentication → Sign-in method → Phone** and register a Firebase web app. Add your production domain and `localhost` to Authentication's authorized domains.
 2. Set `NEXT_PUBLIC_FIREBASE_API_KEY`, `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`, `NEXT_PUBLIC_FIREBASE_APP_ID`, and `NEXT_PUBLIC_FIREBASE_PROJECT_ID` from the web app configuration in local and Vercel environments.
-3. Enable the Google Sheets API in the Google Cloud project used by the Firebase service account.
-4. Create a worksheet tab named `Leads` in the destination spreadsheet. Share the spreadsheet with the service-account email in `FIREBASE_CLIENT_EMAIL`, with Editor access.
-5. Set `GOOGLE_SHEETS_SPREADSHEET_ID` to the ID in the spreadsheet URL. Keep Firebase service-account credentials server-side; only the Firebase web-app configuration belongs in `NEXT_PUBLIC_*` variables.
+3. Enable the Google Sheets API in the Google Cloud project used by the Sheets service account.
+4. Set `GOOGLE_SHEETS_CLIENT_EMAIL` and `GOOGLE_SHEETS_PRIVATE_KEY` from the same active service-account JSON key. The Firebase Admin credentials can be used as a fallback, but use the dedicated Sheets variables when Sheets and Firebase need different service accounts.
+5. Create a worksheet tab named `Leads` in the destination spreadsheet. Share the spreadsheet with the Google Sheets service-account email as an Editor.
+6. Set `GOOGLE_SHEETS_SPREADSHEET_ID` to the ID in the spreadsheet URL. Keep all service-account credentials server-side; only Firebase web-app configuration belongs in `NEXT_PUBLIC_*` variables.
 
 Create a `Leads` worksheet with the header row: `Timestamp`, `Source`, `Name`, `Phone`, `Email`, `Project Type`, `Services`, `Location`, `Area`, `Budget`, `Timeline`, `Message`, `Requirement`, `Possession`, `Phone Verified`. Each verified enquiry appends one row. Set the same variables in Vercel and redeploy. Firebase phone authentication uses Google's reCAPTCHA verification and SMS quotas; test with Firebase's configured test numbers before production.
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).

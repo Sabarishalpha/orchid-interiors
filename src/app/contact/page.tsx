@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -8,7 +8,9 @@ import { ChevronDown } from "lucide-react";
 import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import PageHeader from "../components/PageHeader";
-import PhoneVerificationField from "../components/PhoneVerificationField";
+import PhoneVerificationField, {
+  type PhoneVerificationFieldHandle,
+} from "../components/PhoneVerificationField";
 
 // Zod validation schema
 const contactSchema = z.object({
@@ -115,6 +117,9 @@ export default function ContactPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [phoneVerificationToken, setPhoneVerificationToken] = useState("");
+  const phoneVerificationRef = useRef<PhoneVerificationFieldHandle>(null);
+  const phoneSubmitButtonRef = useRef<HTMLButtonElement>(null);
+  const pendingSubmission = useRef<ContactFormData | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -154,49 +159,67 @@ export default function ContactPage() {
     },
   });
   const phone = useWatch({ control, name: "phone" }) ?? "";
+  const submitEnquiry = useCallback(
+    async (values: ContactFormData, verificationToken: string) => {
+      setSubmitError(null);
+      setIsSubmitting(true);
+
+      try {
+        const response = await fetch("/api/leads", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            ...values,
+            source: "contact-page",
+            phoneVerificationToken: verificationToken,
+          }),
+        });
+
+        const responseData = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(
+            responseData?.error || "We could not send your enquiry right now.",
+          );
+        }
+
+        setSubmitted(true);
+      } catch (error) {
+        setSubmitError(
+          error instanceof Error
+            ? error.message
+            : "We could not send your enquiry right now.",
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [],
+  );
   const handlePhoneVerified = useCallback((token: string) => {
     setPhoneVerificationToken(token);
-  }, []);
+    const values = pendingSubmission.current;
+    if (values) {
+      pendingSubmission.current = null;
+      void submitEnquiry(values, token);
+    }
+  }, [submitEnquiry]);
 
   const onSubmit = async (values: ContactFormData) => {
     setSubmitError(null);
     if (!phoneVerificationToken) {
-      setSubmitError("Verify your phone number before sending the enquiry.");
+      pendingSubmission.current = values;
+      const codeRequested = await phoneVerificationRef.current?.requestCode();
+      if (!codeRequested) pendingSubmission.current = null;
       return;
     }
-    setIsSubmitting(true);
+    await submitEnquiry(values, phoneVerificationToken);
+  };
 
-    try {
-      const response = await fetch("/api/leads", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...values,
-          source: "contact-page",
-          phoneVerificationToken,
-        }),
-      });
-
-      const responseData = await response.json().catch(() => ({}));
-
-      if (!response.ok) {
-        throw new Error(
-          responseData?.error || "We could not send your enquiry right now.",
-        );
-      }
-
-      setSubmitted(true);
-    } catch (error) {
-      setSubmitError(
-        error instanceof Error
-          ? error.message
-          : "We could not send your enquiry right now.",
-      );
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleContactSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    void handleSubmit(onSubmit)(event);
   };
 
   const toggleService = (service: string) => {
@@ -215,6 +238,7 @@ export default function ContactPage() {
     setSelectedServices([]);
     setSubmitError(null);
     setPhoneVerificationToken("");
+    pendingSubmission.current = null;
   };
 
   return (
@@ -438,7 +462,7 @@ export default function ContactPage() {
                   </button>
                 </div>
               ) : (
-                <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+                <form onSubmit={handleContactSubmit} className="space-y-6">
                   {/* Full Name */}
                   <div data-form-field>
                     <label className="mb-2 block text-sm font-medium text-black">
@@ -478,8 +502,11 @@ export default function ContactPage() {
                   {/* Phone */}
                   <div data-form-field>
                     <PhoneVerificationField
+                      ref={phoneVerificationRef}
+                      captchaTriggerRef={phoneSubmitButtonRef}
                       phone={phone}
                       onPhoneChange={(value) => {
+                        pendingSubmission.current = null;
                         setValue("phone", value, { shouldValidate: true });
                         setPhoneVerificationToken("");
                       }}
@@ -659,6 +686,7 @@ export default function ContactPage() {
                   )}
 
                   <button
+                    ref={phoneSubmitButtonRef}
                     type="submit"
                     data-form-submit
                     disabled={isSubmitting}

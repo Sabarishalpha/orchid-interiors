@@ -21,6 +21,15 @@ export class GoogleSheetsAccessError extends Error {
   }
 }
 
+export class GoogleSheetsAuthenticationError extends Error {
+  constructor() {
+    super(
+      "Google rejected the Sheets service-account credentials. The email and private key must come from the same active service-account key.",
+    );
+    this.name = "GoogleSheetsAuthenticationError";
+  }
+}
+
 export class GoogleSheetsWorksheetError extends Error {
   constructor() {
     super("The spreadsheet must contain a worksheet tab named Leads.");
@@ -46,8 +55,21 @@ type WebsiteLead = {
 
 export async function appendWebsiteLead(lead: WebsiteLead) {
   const spreadsheetId = process.env.GOOGLE_SHEETS_SPREADSHEET_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n");
+  const sheetsClientEmail = process.env.GOOGLE_SHEETS_CLIENT_EMAIL;
+  const sheetsPrivateKey = process.env.GOOGLE_SHEETS_PRIVATE_KEY;
+  const hasDedicatedCredentials = Boolean(sheetsClientEmail || sheetsPrivateKey);
+  if (hasDedicatedCredentials && (!sheetsClientEmail || !sheetsPrivateKey)) {
+    throw new GoogleSheetsConfigurationError();
+  }
+
+  const clientEmail = hasDedicatedCredentials
+    ? sheetsClientEmail
+    : process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = (
+    hasDedicatedCredentials
+      ? sheetsPrivateKey
+      : process.env.FIREBASE_PRIVATE_KEY
+  )?.replace(/\\n/g, "\n");
 
   if (!spreadsheetId || !clientEmail || !privateKey) {
     throw new GoogleSheetsConfigurationError();
@@ -80,11 +102,19 @@ export async function appendWebsiteLead(lead: WebsiteLead) {
     }),
   });
 
+  const tokenResult: unknown = await tokenResponse.json();
   if (!tokenResponse.ok) {
+    if (
+      typeof tokenResult === "object" &&
+      tokenResult !== null &&
+      "error" in tokenResult &&
+      tokenResult.error === "invalid_grant"
+    ) {
+      throw new GoogleSheetsAuthenticationError();
+    }
     throw new Error(`Google OAuth token request failed (${tokenResponse.status}).`);
   }
 
-  const tokenResult: unknown = await tokenResponse.json();
   if (
     typeof tokenResult !== "object" ||
     tokenResult === null ||
