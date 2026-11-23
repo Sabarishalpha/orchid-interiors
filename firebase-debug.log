@@ -1,0 +1,115 @@
+[debug] [2026-10-12T08:34:33.479Z] ----------------------------------------------------------------------
+[debug] [2026-10-12T08:34:33.482Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Admin\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init hosting
+[debug] [2026-10-12T08:34:33.482Z] CLI Version:   15.33.0
+[debug] [2026-10-12T08:34:33.482Z] Platform:      win32
+[debug] [2026-10-12T08:34:33.482Z] Node Version:  v24.18.0
+[debug] [2026-10-12T08:34:33.482Z] Detected Agent: unknown
+[debug] [2026-10-12T08:34:33.482Z] Time:          Mon Oct 12 2026 14:04:33 GMT+0530 (India Standard Time)
+[debug] [2026-10-12T08:34:33.482Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2026-10-12T08:34:33.494Z] >>> [apiv2][query] GET https://firebase-public.firebaseio.com/cli.json [none]
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  C:\Users\Admin\StudioProjects\orchid-interiors
+
+[debug] [2026-10-12T08:34:35.166Z] <<< [apiv2][status] GET https://firebase-public.firebaseio.com/cli.json 200
+[debug] [2026-10-12T08:34:35.166Z] <<< [apiv2][body] GET https://firebase-public.firebaseio.com/cli.json {"cloudBuildErrorAfter":1594252800000,"cloudBuildWarnAfter":1590019200000,"defaultNode10After":1594252800000,"minVersion":"3.0.5","node8DeploysDisabledAfter":1613390400000,"node8RuntimeDisabledAfter":1615809600000,"node8WarnAfter":1600128000000}
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] 
+[debug] [2026-10-12T08:35:29.218Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-10-12T08:35:29.218Z] > authorizing via signed-in user (sabarish.2023@gmail.com)
+[debug] [2026-10-12T08:35:29.219Z] Checked if tokens are valid: false, expires at: 1774425321830
+[debug] [2026-10-12T08:35:29.219Z] Checked if tokens are valid: false, expires at: 1774425321830
+[debug] [2026-10-12T08:35:29.220Z] > refreshing access token with scopes: []
+[debug] [2026-10-12T08:35:29.221Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-10-12T08:35:29.221Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-10-12T08:35:29.353Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 400
+[debug] [2026-10-12T08:35:29.353Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-10-12T08:35:29.354Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=100
+[debug] [2026-10-12T08:35:29.566Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 401
+[debug] [2026-10-12T08:35:29.566Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[debug] [2026-10-12T08:35:29.566Z] Got a 401 Unauthenticated error for a call that required authentication. Refreshing tokens.
+[debug] [2026-10-12T08:35:29.566Z] Checked if tokens are valid: false, expires at: 1774425321830
+[debug] [2026-10-12T08:35:29.566Z] Checked if tokens are valid: false, expires at: 1774425321830
+[debug] [2026-10-12T08:35:29.566Z] > refreshing access token with scopes: []
+[debug] [2026-10-12T08:35:29.566Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-10-12T08:35:29.567Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-10-12T08:35:29.626Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 400
+[debug] [2026-10-12T08:35:29.626Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-10-12T08:35:29.627Z] Request to https://firebase.googleapis.com/v1beta1/projects?pageSize=100 had HTTP Error: 401, Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+[debug] [2026-10-12T08:35:29.798Z] FirebaseError: Request to https://firebase.googleapis.com/v1beta1/projects?pageSize=100 had HTTP Error: 401, Request had invalid authentication credentials. Expected OAuth 2 access token, login cookie or other valid authentication credential. See https://developers.google.com/identity/sign-in/web/devconsole-project.
+    at responseToError (C:\Users\Admin\AppData\Roaming\npm\node_modules\firebase-tools\lib\responseToError.js:53:12)
+    at RetryOperation._fn (C:\Users\Admin\AppData\Roaming\npm\node_modules\firebase-tools\lib\apiv2.js:415:77)
+    at process.processTicksAndRejections (node:internal/process/task_queues:104:5)
+[error] 
+[error] Error: Failed to list Firebase projects. See firebase-debug.log for more info.
+[debug] [2026-10-12T08:40:31.348Z] ----------------------------------------------------------------------
+[debug] [2026-10-12T08:40:31.351Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\Admin\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init hosting
+[debug] [2026-10-12T08:40:31.351Z] CLI Version:   15.33.0
+[debug] [2026-10-12T08:40:31.351Z] Platform:      win32
+[debug] [2026-10-12T08:40:31.352Z] Node Version:  v24.18.0
+[debug] [2026-10-12T08:40:31.352Z] Detected Agent: unknown
+[debug] [2026-10-12T08:40:31.352Z] Time:          Mon Oct 12 2026 14:10:31 GMT+0530 (India Standard Time)
+[debug] [2026-10-12T08:40:31.352Z] ----------------------------------------------------------------------
+[debug] 
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  C:\Users\Admin\StudioProjects\orchid-interiors
+
+[info] 
+=== Project Setup
+[info] 
+[info] First, let's associate this project directory with a Firebase project.
+[info] You can create multiple project aliases by running firebase use --add, 
+[info] 
+[debug] [2026-10-12T08:40:43.609Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-10-12T08:40:43.610Z] > authorizing via signed-in user (sabarishsabari987@gmail.com)
+[debug] [2026-10-12T08:40:43.621Z] Checked if tokens are valid: true, expires at: 1791797959873
+[debug] [2026-10-12T08:40:43.621Z] Checked if tokens are valid: true, expires at: 1791797959873
+[debug] [2026-10-12T08:40:43.622Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects pageSize=100
+[debug] [2026-10-12T08:40:44.835Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects 200
+[debug] [2026-10-12T08:40:44.835Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects [omitted]
+[info] 
+=== Hosting Setup
+[info] 
+[debug] [2026-10-12T08:43:20.804Z] Checked if tokens are valid: true, expires at: 1791797959873
+[debug] [2026-10-12T08:43:20.804Z] Checked if tokens are valid: true, expires at: 1791797959873
+[debug] [2026-10-12T08:43:20.804Z] >>> [apiv2][query] GET https://firebase.googleapis.com/v1beta1/projects/orchid-interior [none]
+[debug] [2026-10-12T08:43:21.218Z] <<< [apiv2][status] GET https://firebase.googleapis.com/v1beta1/projects/orchid-interior 200
+[debug] [2026-10-12T08:43:21.219Z] <<< [apiv2][body] GET https://firebase.googleapis.com/v1beta1/projects/orchid-interior {"projectId":"orchid-interior","projectNumber":"442260936510","displayName":"orchid-interior","name":"projects/orchid-interior","resources":{"hostingSite":"orchid-interior","realtimeDatabaseInstance":"orchid-interior-default-rtdb"},"state":"ACTIVE","labels":{"firebase":"enabled","firebaseworkflows/environment":"production","firebase/storage-default-bucket":"created"},"etag":"1_d7341def-88ab-406d-9a78-23547ae1dcdf"}
+[info] 
+[info] Your public directory is the folder (relative to your project directory) that
+[info] will contain Hosting assets to be uploaded with firebase deploy. If you
+[info] have a build process for your assets, use your build's output directory.
+[info] 
+[debug] [2026-10-12T08:45:17.385Z] ExitPromptError: User force closed the prompt with SIGINT
+    at Interface.sigint (C:\Users\Admin\AppData\Roaming\npm\node_modules\firebase-tools\node_modules\@inquirer\core\dist\commonjs\lib\create-prompt.js:101:37)
+    at Interface.emit (node:events:509:28)
+    at [_ttyWrite] [as _ttyWrite] (node:internal/readline/interface:1327:18)
+    at ReadStream.onkeypress (node:internal/readline/interface:284:20)
+    at ReadStream.emit (node:events:521:24)
+    at emitKeys (node:internal/readline/utils:371:14)
+    at emitKeys.next (<anonymous>)
+    at ReadStream.onData (node:internal/readline/emitKeypressEvents:64:36)
+    at ReadStream.emit (node:events:509:28)
+    at addChunk (node:internal/streams/readable:563:12)
+[error] 
+[error] Error: An unexpected error has occurred.

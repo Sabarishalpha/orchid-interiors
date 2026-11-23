@@ -1,0 +1,16 @@
+[
+  {
+    "origin": [
+      "https://orchidmodularinteriors.com",
+      "https://www.orchidmodularinteriors.com",
+      "https://orchidinteriors.com",
+      "https://www.orchidinteriors.com",
+      "https://orchid-interiors.vercel.app",
+      "http://localhost:3000",
+      "http://127.0.0.1:3000"
+    ],
+    "method": ["PUT"],
+    "responseHeader": ["Content-Type"],
+    "maxAgeSeconds": 3600
+  }
+]
