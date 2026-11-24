@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Navbar from "../components/Navbar";
 import Footer from "../components/Footer";
 import LandingPage from "../components/LandingPage";
 import type { InteriorReel } from "../components/InteriorReels";
@@ -76,7 +75,6 @@ export default async function OrchidModularInteriorsPage() {
 
   return (
     <>
-      <Navbar />
       <LandingPage reels={reels} />
       <Footer />
     </>
