@@ -322,7 +322,7 @@ export default function LandingPage({
                         setQuickForm({ ...quickForm, location: e.target.value })
                       }
                       className="mt-2 h-12 w-full rounded-xl border border-stone-200 px-4 text-sm outline-none focus:border-stone-900"
-                      placeholder="Coimbatore"
+                      placeholder="City / Location"
                     />
                   </label>
                   <label className="text-xs font-medium text-stone-700">
@@ -472,7 +472,7 @@ export default function LandingPage({
                     setQuickForm({ ...quickForm, location: e.target.value })
                   }
                   className="mt-2 h-14 w-full rounded-xl border border-stone-200 px-4 text-sm outline-none focus:border-stone-900"
-                  placeholder="Coimbatore"
+                  placeholder="City / Location"
                 />
               </label>
               <label className="text-xs font-medium text-stone-700">

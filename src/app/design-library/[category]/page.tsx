@@ -24,7 +24,7 @@ export async function generateMetadata({
   if (!category) return {};
 
   const title = `${category.title} Interior Designs`;
-  const description = `Explore ${category.title.toLowerCase()} interior design ideas and completed room designs from Orchid Interiors.`;
+  const description = `Explore ${category.title.toLowerCase()} interior design ideas and completed room designs by Orchid Interiors.`;
 
   return {
     title,

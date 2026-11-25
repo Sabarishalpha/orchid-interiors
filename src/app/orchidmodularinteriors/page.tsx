@@ -6,13 +6,13 @@ import type { InteriorReel } from "../components/InteriorReels";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Premium Interior Designers in Coimbatore & Tiruppur",
+  title: "Interior Design",
   description:
-    "Transform your home or commercial space with Orchid Interiors. Explore interior design services, completed projects and book a free consultation.",
+    "Explore home and commercial interior design by Orchid Interiors and request a free design consultation.",
   alternates: { canonical: "/orchidmodularinteriors" },
   openGraph: {
     type: "website",
-    title: "Premium Interior Designers in Coimbatore & Tiruppur",
+    title: "Interior Design",
     description:
       "Thoughtfully designed residential and commercial interiors by Orchid Interiors.",
     url: "/orchidmodularinteriors",
@@ -25,9 +25,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Orchid Interiors | Premium Interior Design",
+    title: "Interior Design",
     description:
-      "Thoughtfully designed residential and commercial interiors across Tamil Nadu.",
+      "Thoughtfully designed residential and commercial interiors by Orchid Interiors.",
     images: ["/images/hero-1.png"],
   },
 };

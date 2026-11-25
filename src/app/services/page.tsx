@@ -11,15 +11,15 @@ import {
 } from "@/lib/content";
 
 export const metadata: Metadata = {
-  title: "Interior Design Services in Coimbatore",
+  title: "Interior Design Services",
   description:
-    "Explore modular kitchens, bedrooms, living rooms, workspaces, and more from Orchid Interiors, serving Coimbatore and nearby Tamil Nadu communities.",
+    "Explore modular kitchens, bedrooms, living spaces and turnkey interior design services by Orchid Interiors.",
   alternates: { canonical: "/services" },
   openGraph: {
     type: "website",
-    title: "Interior Design Services in Coimbatore",
+    title: "Interior Design Services",
     description:
-      "Explore modular kitchens, bedrooms, living rooms, workspaces, and more from Orchid Interiors, serving Coimbatore and nearby Tamil Nadu communities.",
+      "Explore modular kitchens, bedrooms, living spaces and turnkey interior design services by Orchid Interiors.",
     url: "/services",
     images: [
       { url: "/images/services.jpg", alt: "Orchid Interiors design services" },
@@ -27,9 +27,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Interior Design Services in Coimbatore",
+    title: "Interior Design Services",
     description:
-      "Explore modular kitchens, bedrooms, living rooms, workspaces, and more from Orchid Interiors, serving Coimbatore and nearby Tamil Nadu communities.",
+      "Explore modular kitchens, bedrooms, living spaces and turnkey interior design services by Orchid Interiors.",
     images: ["/images/services.jpg"],
   },
 };
@@ -57,13 +57,10 @@ export default async function ServicesPage() {
           image="/images/services.jpg"
           imageAlt="Interior design by Orchid Interiors"
           title="Interior Design Services"
+          description="Explore home, modular kitchen and commercial interiors by Orchid Interiors."
         />
         <div className="pt-8 sm:pt-10">
-          <Services
-            layout="grid"
-            showHeading={false}
-            services={services}
-          />
+          <Services layout="grid" showHeading={false} services={services} />
         </div>
       </main>
       <Footer />

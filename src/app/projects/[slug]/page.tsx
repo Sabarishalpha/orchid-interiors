@@ -38,14 +38,14 @@ export async function generateMetadata({
     title: project ? project.title : "Interior Design Project",
 
     description: project
-      ? `${project.category} interior design by Orchid Interiors in ${project.location}. View project photos and details.`
+      ? `${project.category} interior design by Orchid Interiors. View project photos and details.`
       : "Explore interior design work by Orchid Interiors.",
     alternates: { canonical: `/projects/${slug}` },
     openGraph: project
       ? {
           type: "website",
           title: project.title,
-          description: `${project.category} interior design by Orchid Interiors in ${project.location}.`,
+          description: `${project.category} interior design by Orchid Interiors.`,
           url: `/projects/${slug}`,
           images: [
             {
@@ -59,7 +59,7 @@ export async function generateMetadata({
       ? {
           card: "summary_large_image",
           title: project.title,
-          description: `${project.category} interior design by Orchid Interiors in ${project.location}.`,
+          description: `${project.category} interior design by Orchid Interiors.`,
           images: [resolveProjectAsset(project.image)],
         }
       : undefined,

@@ -41,7 +41,3 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Large video files
-public/videos/*.mp4
-public/videos/projects/*.mp4
-public/images/videos/

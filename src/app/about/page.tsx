@@ -44,23 +44,23 @@ const storyTimeline = [
 ];
 
 export const metadata: Metadata = {
-  title: "About Orchid Interiors in Coimbatore",
+  title: "About Orchid Interiors",
   description:
-    "Learn about Orchid Interiors, our approach to residential and commercial interior design, and the team serving Coimbatore and Tamil Nadu.",
+    "Learn about Orchid Interiors, our residential and commercial design approach, our team and our creative process.",
   alternates: { canonical: "/about" },
   openGraph: {
     type: "website",
-    title: "About Orchid Interiors in Coimbatore",
+    title: "About Orchid Interiors",
     description:
-      "Learn about Orchid Interiors, our approach to residential and commercial interior design, and the team serving Coimbatore and Tamil Nadu.",
+      "Learn about Orchid Interiors, our residential and commercial design approach, our team and our creative process.",
     url: "/about",
     images: [{ url: "/images/about-1.jpeg", alt: "Orchid Interiors studio" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "About Orchid Interiors in Coimbatore",
+    title: "About Orchid Interiors",
     description:
-      "Learn about Orchid Interiors, our approach to residential and commercial interior design, and the team serving Coimbatore and Tamil Nadu.",
+      "Learn about Orchid Interiors, our residential and commercial design approach, our team and our creative process.",
     images: ["/images/about-1.jpeg"],
   },
 };

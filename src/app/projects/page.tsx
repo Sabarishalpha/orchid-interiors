@@ -28,23 +28,23 @@ const projectReasons = [
 ];
 
 export const metadata: Metadata = {
-  title: "Interior Design Projects in Coimbatore",
+  title: "Interior Design Projects",
   description:
-    "Explore residential, commercial, hospitality, and institutional interiors designed by Orchid Interiors in Coimbatore and Tiruppur.",
+    "Explore residential, commercial, hospitality and institutional interior design projects by Orchid Interiors.",
   alternates: { canonical: "/projects" },
   openGraph: {
     type: "website",
-    title: "Interior Design Projects in Coimbatore",
+    title: "Interior Design Projects",
     description:
-      "Explore residential, commercial, hospitality, and institutional interiors designed by Orchid Interiors in Coimbatore and Tiruppur.",
+      "Explore residential, commercial, hospitality and institutional interior design projects by Orchid Interiors.",
     url: "/projects",
     images: [{ url: "/images/hero-1.png", alt: "Orchid Interiors project" }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Interior Design Projects in Coimbatore",
+    title: "Interior Design Projects",
     description:
-      "Explore residential, commercial, hospitality, and institutional interiors designed by Orchid Interiors in Coimbatore and Tiruppur.",
+      "Explore residential, commercial, hospitality and institutional interior design projects by Orchid Interiors.",
     images: ["/images/hero-1.png"],
   },
 };

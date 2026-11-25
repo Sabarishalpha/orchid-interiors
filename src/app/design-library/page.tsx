@@ -8,13 +8,13 @@ import { getDesignLibrary } from "@/lib/content";
 export const metadata: Metadata = {
   title: "Interior Design Ideas & Room Gallery",
   description:
-    "Browse Orchid Interiors room galleries for kitchen, bedroom, living room, dining, pooja, office, and hospitality interior design ideas.",
+    "Browse kitchen, bedroom, living room, dining and office interior design ideas by Orchid Interiors.",
   alternates: { canonical: "/design-library" },
   openGraph: {
     type: "website",
     title: "Interior Design Ideas & Room Gallery",
     description:
-      "Browse Orchid Interiors room galleries for kitchen, bedroom, living room, dining, pooja, office, and hospitality interior design ideas.",
+      "Browse kitchen, bedroom, living room, dining and office interior design ideas by Orchid Interiors.",
     url: "/design-library",
     images: [
       { url: "/images/hero-1.png", alt: "Orchid Interiors design gallery" },
@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Interior Design Ideas & Room Gallery",
     description:
-      "Browse Orchid Interiors room galleries for kitchen, bedroom, living room, dining, pooja, office, and hospitality interior design ideas.",
+      "Browse kitchen, bedroom, living room, dining and office interior design ideas by Orchid Interiors.",
     images: ["/images/hero-1.png"],
   },
 };

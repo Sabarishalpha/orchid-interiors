@@ -66,8 +66,8 @@ export default function DesignLibrary({ categories }: DesignLibraryProps) {
             Design Library
           </h1>
           <p className="mt-7 max-w-xl text-base leading-7 text-stone-600 sm:text-lg">
-            Browse our completed interiors by room. Select a category to see the
-            full collection of visualised designs.
+            Browse our completed interiors by room. Select a category to see
+            the full collection of visualised designs.
           </p>
         </div>
 

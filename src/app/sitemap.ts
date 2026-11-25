@@ -16,13 +16,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     "/projects",
     "/contact",
     "/design-library",
+    "/orchidmodularinteriors",
   ];
 
   return [
     ...pages.map((path) => ({
       url: `${siteUrl}${path}`,
       changeFrequency: "monthly" as const,
-      priority: path === "" ? 1 : 0.8,
+      priority:
+        path === ""
+          ? 1
+          : path === "/orchidmodularinteriors"
+            ? 0.9
+            : 0.8,
     })),
     ...projects.map((project) => ({
       url: `${siteUrl}/projects/${project.slug}`,

@@ -77,9 +77,9 @@ const FAQs = [
       "Yes, we offer complete turnkey solutions. This means we manage everything from design to procurement, installation, and project completion. You can choose to be involved at every stage or let us handle it entirely.",
   },
   {
-    question: "Do you work outside Coimbatore?",
+    question: "Do you work outside your usual service area?",
     answer:
-      "Yes, we work across Tamil Nadu and nearby regions. For projects outside our immediate area, we coordinate with trusted local partners to ensure quality and consistency.",
+      "Yes. We assess each project individually and coordinate with trusted local partners when needed to ensure quality and consistency.",
   },
   {
     question: "How long does an interior project usually take?",
