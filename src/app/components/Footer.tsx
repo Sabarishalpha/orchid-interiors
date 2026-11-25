@@ -7,6 +7,7 @@ import {
   FaWhatsapp,
   FaYoutube,
 } from "react-icons/fa6";
+import { Shield, Zap } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -155,7 +156,7 @@ export default function Footer() {
                 </h3>
                 <div className="space-y-4 md:space-y-5">
                   <p className="text-sm leading-relaxed text-white/80 md:text-base">
-                     Avinashi Main Rd, Periyar Colony,
+                    Avinashi Main Rd, Periyar Colony,
                     <br />
                     Tiruppur, Tamil Nadu - 641 603
                   </p>
@@ -193,7 +194,7 @@ export default function Footer() {
               data-footer-social
               className="flex items-center gap-6 sm:gap-8"
             >
-               <a
+              <a
                 href="https://wa.me/919790352563"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -247,7 +248,25 @@ export default function Footer() {
               >
                 <FaYoutube className="h-5 w-5 sm:h-6 sm:w-6" />
               </a>
+            </div>
 
+            <div className="flex items-center gap-2 text-xs text-white/60 sm:text-sm">
+              <span>Developed by</span>
+              <a
+                href="https://www.instagram.com/sabarish.arumugam/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="View developer profile on Instagram"
+                className="inline-flex h-9 w-9 items-center justify-center text-white transition-opacity hover:opacity-70"
+              >
+                <span className="relative inline-flex">
+                  <Shield className="h-8 w-8" aria-hidden="true" />
+                  <Zap
+                    className="absolute left-1/2 top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 fill-current"
+                    aria-hidden="true"
+                  />
+                </span>
+              </a>
             </div>
 
             {/* Right - Legal Links */}
