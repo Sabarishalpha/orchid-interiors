@@ -404,7 +404,13 @@ export default function ChatBot() {
     await sendLead(leadForm, leadPhoneVerificationToken);
   };
 
-  if (pathname.startsWith("/admin")) return null;
+  if (
+    pathname.startsWith("/admin") ||
+    pathname === "/orchidmodularinteriors" ||
+    pathname.startsWith("/orchidmodularinteriors/")
+  ) {
+    return null;
+  }
 
   return (
     <>

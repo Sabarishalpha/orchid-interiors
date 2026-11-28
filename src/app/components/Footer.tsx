@@ -253,7 +253,7 @@ export default function Footer() {
             <div className="flex items-center gap-2 text-xs text-white/60 sm:text-sm">
               <span>Developed by</span>
               <a
-                href="https://www.instagram.com/sabarish.arumugam/"
+                href="https://about.me/sabarish.a"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="View developer profile on Instagram"

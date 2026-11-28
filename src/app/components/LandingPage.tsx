@@ -202,28 +202,6 @@ export default function LandingPage({
   return (
     <main className="pb-[68px] md:pb-0">
       <section className="relative isolate min-h-[720px] overflow-hidden bg-[#f4f1eb] text-stone-950 sm:min-h-[680px] lg:min-h-[760px]">
-        <div className="absolute right-4 top-4 z-20 flex gap-3 sm:right-6 sm:top-6">
-          <button
-            type="button"
-            aria-label="Get Free Design Consultation"
-            onClick={() => {
-              trackEvent("hero_consultation_click");
-              openModal();
-            }}
-            className="inline-flex h-14 w-14 items-center justify-center rounded-full bg-white text-black transition hover:bg-stone-200"
-          >
-            <MessageCircle className="h-5 w-5" />
-          </button>
-          <a
-            href="#instant-estimate"
-            aria-label="Get Instant Estimate"
-            onClick={() => trackEvent("instant_estimate_start")}
-            className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-white/50 bg-black/20 text-white backdrop-blur-sm transition hover:bg-white hover:text-black"
-          >
-            <Ruler className="h-5 w-5" />
-          </a>
-        </div>
-
         <div className="relative z-10 mx-auto grid min-h-[720px] max-w-[1500px] items-center gap-6 px-4 pb-10 pt-24 sm:min-h-[680px] sm:px-6 sm:pb-12 sm:pt-28 md:px-10 lg:min-h-[760px] lg:grid-cols-[1.05fr_0.95fr] lg:px-16">
           <div className="relative min-h-[360px] overflow-hidden rounded-[2rem] bg-stone-200 sm:min-h-[480px] lg:h-[620px]">
             <video
